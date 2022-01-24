@@ -1,9 +1,19 @@
 import numpy as np
 from scipy import stats
+import matplotlib.pyplot as plt
 
 def main():
-    data_csv = "/Users/alfredo/Desktop/data/inst_exp_data_short.csv"
-    event_csv = "/Users/alfredo/Desktop/data/inst_exp_events_short.csv"
+    data_csv = "/Users/alfredo/Desktop/data/1_inst_exp_data_short.csv"
+    event_csv = "/Users/alfredo/Desktop/data/1_inst_exp_events_short.csv"
+    # pred_csv = "/Users/alfredo/Desktop/data/inst_exp_detected_500msavg.csv"
+    # pred_csv = "/Users/alfredo/Desktop/data/GroEL events F=2000 jt=0 t=100 tavg=500.csv"
+    # pred_csv = "/Users/alfredo/Desktop/data/GroEL events F=600 jt=0 t=50 tavg=500.csv"
+    # pred_csv = "/Users/alfredo/Desktop/data/inst_exp_detected.csv"
+    # pred_100_csv = "/Users/alfredo/Desktop/data/1_inst_exp_detected_F=600_500ms_avg.csv"
+
+
+
+
 
     data = np.genfromtxt(data_csv, delimiter=',')
     pred_times = find_jumps_loc(data)
@@ -11,12 +21,15 @@ def main():
     events = np.genfromtxt(event_csv, delimiter=',')
     actual_times = events[:,0]
 
-    print(pred_times)
+    # print(pred_times)
 
-    print(actual_times)
+    # print(actual_times)
 
+    # pred_events = np.genfromtxt(pred_csv, delimiter=',')
+    # pred_times = pred_events[:,0]
 
     tp, fp = evaluate_pred(pred_times, actual_times)
+    # plot_jumps(events, pred_events)
     print(fp)
 
 def multivariate_t_test(data, thresh = 25):
@@ -90,6 +103,7 @@ def univariate_t_test(mode, thresh = 40):
 def evaluate_pred(pred_times, actual_times):
     true_pos_count = 0
     false_pos_count = 0
+    diffs = []
     for pred in pred_times:
         pred_range = [pred-0.01,pred+0.01]
         is_real = False
@@ -97,14 +111,32 @@ def evaluate_pred(pred_times, actual_times):
         for time in actual_times:
             if time > pred_range[0] and time < pred_range[1]:
                 is_real = True
+                diffs.append(time-pred)
 
         if is_real:
             true_pos_count += 1
+            
         else:
             false_pos_count += 1
 
+    print(np.mean(diffs))
+    print(np.std(diffs))
 
     return(true_pos_count, false_pos_count)
+
+def plot_jumps(data, pred_data):
+    plt.title("Scatter plot of jumps")
+    plt.ylabel('df2')
+    plt.xlabel('df1')
+    plt.ylim(-3e-6, 1e-6)
+    plt.xlim(-3e-6, 1e-6)
+
+    true = plt.scatter(data[:,1], data[:,2])
+    pred = plt.scatter(pred_data[:,1], pred_data[:,2])
+    plt.legend([true, pred],['True', "Prediction"])
+    plt.rcParams["figure.figsize"] = [10, 10]
+    plt.savefig("plt500ms.jpg", dpi=600)
+    plt.show()
 
 
 if __name__ == "__main__":
