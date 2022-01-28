@@ -79,7 +79,6 @@ tfin = ttot-Ndetect*3-Njump;
 % tfin = floor(tfin/50);   % optionally use subset of data to peek at results
 
 Fstats = zeros(tfin,1);
-t_Fstats = tvect(Ndetect:tfin+Ndetect-1);
 Fstat_thresh_detect = 1200;
 Fstat_thresh_meas = 2400;
 
@@ -113,6 +112,11 @@ for ti=100:tfin-100 % allow for time lag in either direction
     Fstats(ti+Ndetect) = Fstat;
     
 end
+
+% optionally plot Fstats
+% figure;
+% plot(tvect(1:length(Fstats)),Fstats);
+
 %%
 fprintf('jump_events:         ');
 jumps_detected = [];
