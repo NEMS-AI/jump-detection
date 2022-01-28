@@ -41,5 +41,15 @@ if strcmp(data_type, 'noise') || strcmp(data_type, 'data')
         end
         fvect = [fvect; freq_i'];
     end
+elseif strcmp(data_type, 'synthetic')
+    
+    syn_data = readtable(filenames(1));
+    syn_data = table2array(syn_data);
+    tvect = syn_data(:,1);
+    tvect=tvect-tvect(1);
+    for fi=1:nmodes
+        fvect = [fvect; syn_data(:,fi+1)'];
+    end
+    
 end
 

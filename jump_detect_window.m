@@ -1,6 +1,6 @@
 
 nmodes = 2;
-data_type = 'data';     % choose from 'noise', 'data', 'synthetic'
+data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
 tsample = .00025;        % seconds per sample
 tmeas_detect = .10;      % time window for detecting jump (before and after samples)
 tjump = .06;             % time window for (full) jump itself
@@ -24,18 +24,12 @@ if strcmp(data_type, 'data')
     tvect = tvect(tvectuse);
     tvect = tvect-tvect(1);
     fvect = fvect(:,tvectuse);
+    tstart = 10; % used for time lag calculation
+    tlag_mode2_per_second = .013/830;
+elseif strcmp(data_type, 'synthetic')
+    tstart = 0;
+    tlag_mode2_per_second = 0;
 end
-tstart = 10; % used for time lag calculation
-tlag_mode2_per_second = .013/830;
-
-% % read synthetic data
-% infile = 'synthetic/2/7_decay_exp_data.csv';
-% outfile = 'synthetic/2/7_decay_exp_detected.csv';
-% data = readtable(infile);
-% data = table2array(data);
-% tvect = data(:,1); tvect=tvect-tvect(1);
-% f1 = data(:,2);
-% f2 = data(:,3);
 
 % preprocess to remove drift? invert the below:
 % f1_drift = (.99997-1)*mode1_fstart/700*tvect;
@@ -45,7 +39,7 @@ ttot = length(tvect);
 
 % last time point
 tfin = ttot-Ndetect*3-Njump;
-% tfin = floor(tfin/50);   % optionally use subset of data to peek at results
+tfin = floor(tfin/50);   % optionally use subset of data to peek at results
 
 Fstats = zeros(tfin,1);
 Fstat_thresh_detect = 1200;
