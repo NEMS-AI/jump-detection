@@ -21,7 +21,7 @@ elseif nmodes == 3
 end
 
 fvect = [];
-if data_type == 'noise'
+if data_type == 'noise' || data_type == 'data'
     
     for fi=1:nmodes   
         fid = fopen(filenames(fi));
@@ -34,12 +34,12 @@ if data_type == 'noise'
         
         freq_i = nems_data{4};
         % optionally scale noise for simulation purpose
-        noise_factor = 1;
-        freq_i_start = freq_i(1);
-        freq_i = (freq_i-freq_i_start)*noise_factor + freq_i_start;
+        if data_type == 'noise'
+            noise_factor = 1;
+            freq_i_start = freq_i(1);
+            freq_i = (freq_i-freq_i_start)*noise_factor + freq_i_start;
+        end
         fvect = [fvect; freq_i'];
-        
     end
-
 end
 
