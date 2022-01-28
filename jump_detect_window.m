@@ -12,24 +12,6 @@ Ndetect = floor(tmeas_detect/tsample);
 Njump = floor(tjump/tsample);
 Npre = floor(tjump_pre/tsample);
 
-% % read noise
-% noise_factor = .01;
-% fid = fopen('experiment/[CL m1] 12_Z=4665 X=2388 Y=3090 #20 no ions.txt');
-% nems1 = textscan(fid, '%f %f %f %f %f','HeaderLines', 82 );
-% fclose(fid);
-% fid = fopen('experiment/[CL m2] 12_Z=4665 X=2388 Y=3090 #20 no ions.txt');
-% nems2 = textscan(fid, '%f %f %f %f %f','HeaderLines', 82 );
-% fclose(fid);
-% tvect=nems1{1}; f1=nems1{4};
-% tvect=tvect-tvect(1);
-% %t2=nems2{1};
-% f2=nems2{4};
-% 
-% % scale noise for simulation purpose
-% f1_start = f1(1); f2_start = f2(2);
-% f1 = (f1-f1_start)*noise_factor + f1_start;
-% f2 = (f2-f2_start)*noise_factor + f2_start;
-
 [tvect, fvect] = load_data(filenames, data_type, nmodes);
 
 
