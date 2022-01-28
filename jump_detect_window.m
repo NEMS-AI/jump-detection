@@ -1,14 +1,19 @@
 
 nmodes = 3;
-data_type = 'noise';     % choose from 'noise', 'data', 'synthetic'
+data_type = 'data';     % choose from 'noise', 'data', 'synthetic'
 if nmodes == 2
     tsample = .00025;        % seconds per sample
+    tmeas_detect = .10;      % time window for detecting jump (before and after samples)
+    tjump = .06;             % time window for (full) jump itself
+    tjump_pre = .03;         % time before F threshold detection for jump
+    tmeas = .2;              % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
+    tmeas_detect = 0.5;     % 1-10s optimal detection window
+    tjump = 0.1;            % not sure exact PLL settings
+    tjump_pre = 0.05;
+    tmeas = 2; 
 end
-tmeas_detect = .10;      % time window for detecting jump (before and after samples)
-tjump = .06;             % time window for (full) jump itself
-tjump_pre = .03;         % time before F threshold detection for jump
 tjump_post = tjump - tjump_pre; % time after detection for jump itself 
 
 % number of samples for detection
@@ -20,18 +25,25 @@ Npre = floor(tjump_pre/tsample);
 
 % optionally select portion of data
 if strcmp(data_type, 'data')
-    % tvectuse = tvect > 10 & tvect < 830;  % full dataset
-    % tvectuse = tvect > 10 & tvect < 420;  % first half
-    % tvectuse = tvect > 420 & tvect < 830;  % second half
-    tvectuse = tvect > 10 & tvect < 92;  % first tenth
-    % tvectuse = tvect > 748 & tvect < 830;  % last tenth
-    tvect = tvect(tvectuse);
-    tvect = tvect-tvect(1);
-    fvect = fvect(:,tvectuse);
-    tstart = 10; % used for time lag calculation
-    tlag_mode2_per_second = .013/830;
-    tlag_mode3_per_second = 0;
-    tlag_buffer = 100;
+    if nmodes == 2
+        % tvectuse = tvect > 10 & tvect < 830;  % full dataset
+        % tvectuse = tvect > 10 & tvect < 420;  % first half
+        % tvectuse = tvect > 420 & tvect < 830;  % second half
+        tvectuse = tvect > 10 & tvect < 92;  % first tenth
+        % tvectuse = tvect > 748 & tvect < 830;  % last tenth
+        tvect = tvect(tvectuse);
+        tvect = tvect-tvect(1);
+        fvect = fvect(:,tvectuse);
+        tstart = 10; % used for time lag calculation
+        tlag_mode2_per_second = .013/830;
+        tlag_mode3_per_second = 0;
+        tlag_buffer = 100;
+    elseif nmodes == 3
+        tstart = 0; 
+        tlag_mode2_per_second = 0;
+        tlag_mode3_per_second = 0;
+        tlag_buffer = 0;
+    end
 elseif strcmp(data_type, 'noise') || strcmp(data_type, 'synthetic')
     tstart = 0;
     tlag_mode2_per_second = 0;
@@ -50,8 +62,10 @@ tfin = ttot-Ndetect*3-Njump;
 % tfin = floor(tfin/50);   % optionally use subset of data to peek at results
 
 Fstats = zeros(tfin,1);
-Fstat_thresh_detect = 1200;
-Fstat_thresh_meas = 2400;
+% Fstat_thresh_detect = 1200;
+% Fstat_thresh_meas = 2400;
+Fstat_thresh_detect = 300;
+Fstat_thresh_meas = 600;
 
 % optionally plot relative frequencies
 % figure;
@@ -136,11 +150,11 @@ end
 
 %%
 % do final calculation for jumps that are tmeas apart.
-tmeas = .2; % 200 ms to measure jump height
 Nmeas = floor(tmeas/tsample);
 jumps_measured = [];
 rel_jump_ts_1 = [];
 rel_jump_ts_2 = [];
+rel_jump_ts_3 = [];
 Fstats_ts = [];
 
 for ji = 2:size(jumps_detected,1)-2
@@ -170,6 +184,13 @@ for ji = 2:size(jumps_detected,1)-2
 
     fvect_xi = [fvect(1,xi_range); fvect(2,xi_range+Nlag_m2)];
     fvect_yi = [fvect(1,yi_range); fvect(2,yi_range+Nlag_m2)];
+    
+    if nmodes == 3
+        tlag_m3 = (tvect(ti)+tstart)*tlag_mode3_per_second;
+        Nlag_m3 = floor(tlag_m3/tsample);
+        fvect_xi = [fvect_xi; fvect(3,xi_range+Nlag_m3)];
+        fvect_yi = [fvect_yi; fvect(3,yi_range+Nlag_m3)];
+    end
 
     xbar = mean(fvect_xi,2);
     ybar = mean(fvect_yi,2);
@@ -177,9 +198,18 @@ for ji = 2:size(jumps_detected,1)-2
     rel_jump = ybar./xbar-1;
     jumps_measured = [jumps_measured; tvect(ti_jump) peak_width_fwhm Fstatmax rel_jump'];
     
-    rel_jump_ts = ([fvect(1,all_range); fvect(2,all_range+Nlag_m2);]-ybar)./(xbar-ybar);
+    % Todo: use cells to improve flexbility
+    if nmodes == 2
+        rel_jump_ts = ([fvect(1,all_range); fvect(2,all_range+Nlag_m2)]-ybar)./(xbar-ybar);
+    elseif nmodes == 3 
+        rel_jump_ts = ([fvect(1,all_range); fvect(2,all_range+Nlag_m2); ...
+                        fvect(3,all_range+Nlag_m3);]-ybar)./(xbar-ybar);
+    end
     rel_jump_ts_1 = [rel_jump_ts_1; rel_jump_ts(1,:)];
     rel_jump_ts_2 = [rel_jump_ts_2; rel_jump_ts(2,:)];
+    if nmodes == 3
+        rel_jump_ts_3 = [rel_jump_ts_3; rel_jump_ts(3,:)];
+    end
     Fstats_ts = [Fstats_ts; Fstats(all_range)'];
     
 %     figure;
@@ -196,7 +226,10 @@ writematrix(jumps_measured,uiputfile());
 
 %%
 % plot jump signature with optional exponential fit (obtained separately with toolbox)
-med_rel_jump = [median(rel_jump_ts_1); median(rel_jump_ts_2);];
+med_rel_jump = [median(rel_jump_ts_1); median(rel_jump_ts_2)];
+if nmodes == 3
+    med_rel_jump = [med_rel_jump; median(rel_jump_ts_3)];
+end
 med_Fstats = median(Fstats_ts);
 
 figure;
@@ -205,22 +238,26 @@ fvect_med_jump_1=med_rel_jump(1,:);
 fvect_med_jump_2=med_rel_jump(2,:);
 plot(tvect_med_jump,fvect_med_jump_1,'k'); hold on
 plot(tvect_med_jump,fvect_med_jump_2,'b');
+if nmodes == 3
+    fvect_med_jump_3=med_rel_jump(3,:);
+    plot(tvect_med_jump,fvect_med_jump_3,'r');
+end
 xlabel('Time (s)');
 ylabel('Normalized jump');
-legend('Mode 1','Mode 2');
+legend('Mode 1','Mode 2','Mode 3');
 % yyaxis right
 % plot(tvect_med_jump,med_Fstats);
 
-% portion after the jump to fit exponential to
-t0_exp = .0125;
-xtofit_aj = tvect_med_jump(tvect_med_jump > t0_exp)- t0_exp;
-ytofit1_aj = fvect_med_jump_1(tvect_med_jump > t0_exp);
-ytofit2_aj = fvect_med_jump_2(tvect_med_jump > t0_exp);
-% synthetic fit, 1/10 and 1/100
-% plot(xtofit_aj+t0_exp,1.008*exp(-99.83*xtofit_aj),'r');
-% synthetic fit, 1
-% plot(xtofit_aj+t0_exp,.9037*exp(-90.33*xtofit_aj),'r');
-% experimental fit
-plot(xtofit_aj+t0_exp,.8874*exp(-138.1*xtofit_aj),'r');
+% % portion after the jump to fit exponential to
+% t0_exp = .0125;
+% xtofit_aj = tvect_med_jump(tvect_med_jump > t0_exp)- t0_exp;
+% ytofit1_aj = fvect_med_jump_1(tvect_med_jump > t0_exp);
+% ytofit2_aj = fvect_med_jump_2(tvect_med_jump > t0_exp);
+% % synthetic fit, 1/10 and 1/100
+% % plot(xtofit_aj+t0_exp,1.008*exp(-99.83*xtofit_aj),'r');
+% % synthetic fit, 1
+% % plot(xtofit_aj+t0_exp,.9037*exp(-90.33*xtofit_aj),'r');
+% % experimental fit
+% plot(xtofit_aj+t0_exp,.8874*exp(-138.1*xtofit_aj),'r');
 1;
 
