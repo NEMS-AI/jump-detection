@@ -1,6 +1,6 @@
 
 nmodes = 2;
-data_type = 'noise';
+data_type = 'noise';     % choose from 'noise', 'data', 'synthetic'
 tsample = .00025;        % seconds per sample
 tmeas_detect = .10;      % time window for detecting jump (before and after samples)
 tjump = .06;             % time window for (full) jump itself
@@ -14,31 +14,18 @@ Npre = floor(tjump_pre/tsample);
 
 [tvect, fvect] = load_data(filenames, data_type, nmodes);
 
-
-
-% % read data
-% outfile = 'experiment/GroEL events.csv';
-% fid = fopen('experiment/[CL m1] 13_Z=4665 X=2388 Y=3090 #20 GroEl.txt');
-% nems1 = textscan(fid, '%f %f %f %f %f','HeaderLines', 82 );
-% fclose(fid);
-% fid = fopen('experiment/[CL m2] 13_Z=4665 X=2388 Y=3090 #20 GroEl.txt');
-% nems2 = textscan(fid, '%f %f %f %f %f','HeaderLines', 82 );
-% fclose(fid);
-% tvect=nems1{1}; f1=nems1{4};
-% tvect=tvect-tvect(1);
-% % tvect2=nems2{1}; 
-% % tvect2=tvect2-tvect2(1);
-% f2=nems2{4};
-% tvectuse = tvect > 10 & tvect < 830;  % full dataset
-% % tvectuse = tvect > 10 & tvect < 420;  % first half
-% % tvectuse = tvect > 420 & tvect < 830;  % second half
-% % tvectuse = tvect > 10 & tvect < 92;  % first tenth
-% % tvectuse = tvect > 748 & tvect < 830;  % last tenth
-% tvect = tvect(tvectuse);
-% tvect = tvect-tvect(1);
+% optionally select portion of data
+if data_type == 'data'
+    % tvectuse = tvect > 10 & tvect < 830;  % full dataset
+    % tvectuse = tvect > 10 & tvect < 420;  % first half
+    % tvectuse = tvect > 420 & tvect < 830;  % second half
+    % tvectuse = tvect > 10 & tvect < 92;  % first tenth
+    % tvectuse = tvect > 748 & tvect < 830;  % last tenth
+    % tvect = tvect(tvectuse);
+    % tvect = tvect-tvect(1);
+    % fvect = fvect(:,tvectuse);
+end
 tstart = 10; % used for time lag calculation
-% f1=f1(tvectuse);
-% f2=f2(tvectuse);
 tlag_mode2_per_second = .013/830;
 
 % % read synthetic data
