@@ -1,7 +1,11 @@
 
-nmodes = 2;
-data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
-tsample = .00025;        % seconds per sample
+nmodes = 3;
+data_type = 'noise';     % choose from 'noise', 'data', 'synthetic'
+if nmodes == 2
+    tsample = .00025;        % seconds per sample
+elseif nmodes == 3
+    tsample = 0.02;
+end
 tmeas_detect = .10;      % time window for detecting jump (before and after samples)
 tjump = .06;             % time window for (full) jump itself
 tjump_pre = .03;         % time before F threshold detection for jump
@@ -26,9 +30,13 @@ if strcmp(data_type, 'data')
     fvect = fvect(:,tvectuse);
     tstart = 10; % used for time lag calculation
     tlag_mode2_per_second = .013/830;
-elseif strcmp(data_type, 'synthetic')
+    tlag_mode3_per_second = 0;
+    tlag_buffer = 100;
+elseif strcmp(data_type, 'noise') || strcmp(data_type, 'synthetic')
     tstart = 0;
     tlag_mode2_per_second = 0;
+    tlag_mode3_per_second = 0;
+    tlag_buffer = 0;
 end
 
 % preprocess to remove drift? invert the below:
@@ -39,19 +47,24 @@ ttot = length(tvect);
 
 % last time point
 tfin = ttot-Ndetect*3-Njump;
-tfin = floor(tfin/50);   % optionally use subset of data to peek at results
+% tfin = floor(tfin/50);   % optionally use subset of data to peek at results
 
 Fstats = zeros(tfin,1);
 Fstat_thresh_detect = 1200;
 Fstat_thresh_meas = 2400;
 
-% plot(tvect,f1/f1(1),'k'); hold on
-% plot(tvect,f2/f2(1),'b');
+% optionally plot relative frequencies
+% figure;
+% plot(tvect,fvect(1,:)/fvect(1,1),'k'); hold on
+% plot(tvect,fvect(2,:)/fvect(2,1),'b');
+% plot(tvect,fvect(3,:)/fvect(3,1),'r');
+% xlabel('Time (s)')
+% ylabel('Relative frequency');
 
 %%
 
 fprintf('Fstat:         ');
-for ti=100:tfin-100 % allow for time lag in either direction
+for ti=1+tlag_buffer:tfin-tlag_buffer % allow for time lag in either direction
    
     fprintf('\b\b\b\b\b\b\b%5.02f%%\n',ti/ttot*100); 
 
@@ -63,28 +76,35 @@ for ti=100:tfin-100 % allow for time lag in either direction
 
     fvect_xi = [fvect(1,xi_range); fvect(2,xi_range+Nlag_m2)];
     fvect_yi = [fvect(1,yi_range); fvect(2,yi_range+Nlag_m2)];
-
+    
+    if nmodes == 3
+        tlag_m3 = (tvect(ti)+tstart)*tlag_mode3_per_second;
+        Nlag_m3 = floor(tlag_m3/tsample);
+        fvect_xi = [fvect_xi; fvect(3,xi_range+Nlag_m3)];
+        fvect_yi = [fvect_yi; fvect(3,yi_range+Nlag_m3)];
+    end
+    
     xbar = mean(fvect_xi,2);
     ybar = mean(fvect_yi,2);
     sigma_x = cov(fvect_xi');
     sigma_y = cov(fvect_yi');
     sigma_pool = sigma_x/2 + sigma_y/2;
     t2 = Ndetect/2*((xbar-ybar)'/sigma_pool)*(xbar-ybar);
-    p_dim = 2;
+    p_dim = nmodes;
     Fstat = (2*Ndetect-p_dim-1)/(p_dim*(2*Ndetect-2))*t2;
     Fstats(ti+Ndetect) = Fstat;
     
 end
 
 % optionally plot Fstats
-% figure;
-% plot(tvect(1:length(Fstats)),Fstats);
+figure;
+plot(tvect(1:length(Fstats)),Fstats);
 
 %%
 fprintf('jump_events:         ');
 jumps_detected = [];
-ti=100; % allow for time lag in either direction
-while ti < tfin-100
+ti=1+tlag_buffer; % allow for time lag in either direction
+while ti < tfin-tlag_buffer
     
     fprintf('\b\b\b\b\b\b\b%5.02f%%\n',ti/ttot*100); 
     if Fstats(ti) < Fstat_thresh_detect
