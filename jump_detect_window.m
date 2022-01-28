@@ -177,7 +177,8 @@ for ji = 2:size(jumps_detected,1)-2
 %     1;
 end
 
-writematrix(jumps_measured,outfile);
+% have user choose output file to avoid overwriting
+writematrix(jumps_measured,uiputfile());
 
 %%
 % plot jump signature with optional exponential fit (obtained separately with toolbox)
