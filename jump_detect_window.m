@@ -4,8 +4,8 @@ data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
 if nmodes == 2
     tsample = .00025;        % seconds per sample
     tmeas_detect = .10;      % time window for detecting jump (before and after samples)
-    tjump = .06;             % time window for (full) jump itself
-    tjump_pre = .01;         % time before F threshold detection for jump
+    tjump = .08;             % time window for (full) jump itself
+    tjump_pre = .08;         % time before F threshold detection for jump
     tmeas = .2;              % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
@@ -128,7 +128,7 @@ while ti < tfin-tlag_buffer
     else
         tii = 0;
         Fstathi = Fstats(ti);
-        Fstatlo = Fstat_thresh_detect/2;
+        Fstatlo = Fstat_thresh_detect*0.8;
         npeaks = 0;
         peakfound = 0;
         while tii < tfin-ti && Fstats(ti+tii) > Fstat_thresh_detect
@@ -136,7 +136,7 @@ while ti < tfin-tlag_buffer
             if peakfound == 0
                 if Fstats(ti+tii) > Fstathi
                     Fstathi = Fstats(ti+tii);
-                elseif Fstats(ti+tii) < Fstathi/2
+                elseif Fstats(ti+tii) < Fstathi*0.8
                     npeaks = npeaks + 1;
                     Fstatlo = Fstats(ti+tii);
                     peakfound = 1;
@@ -145,7 +145,7 @@ while ti < tfin-tlag_buffer
             if peakfound == 1
                 if Fstats(ti+tii) < Fstatlo
                     Fstatlo = Fstats(ti+tii);
-                elseif Fstats(ti+tii) > Fstatlo*1.5 && Fstats(ti+tii) > Fstat_thresh_meas
+                elseif Fstats(ti+tii) > Fstatlo*1.2 && Fstats(ti+tii) > Fstat_thresh_meas
                     Fstathi = Fstats(ti+tii);
                     peakfound = 0;
                 end
@@ -216,12 +216,21 @@ for ji = 2:size(jumps_detected,1)-1
     t_next = tvect(jumps_detected(ji+1,1));
     
     Fstatmax = jumps_detected(ji,3);
-    if Fstatmax < Fstat_thresh_detect, continue; end
+    t_abovethresh = jumps_detected(ji,7);
+    t_fwhm = jumps_detected(ji,9);
+%     if Fstatmax < Fstat_thresh_detect, continue; end
+    if Fstatmax < Fstat_thresh_meas, continue; end
+    if t_abovethresh > 0.2, continue; end
+    if t_fwhm < 0.032, continue; end
     
     if t_curr - tjump_pre < t_prev + tmeas + tjump_post || ...
        t_next - tjump_pre < t_curr + tmeas + tjump_post, continue; end
     
     % can optionally exclude jumps with too wide peak width
+    
+    % exclude >1 detected peak
+    npeaks = jumps_detected(ji,6);
+    if npeaks > 1, continue; end
     
     ti_jump = jumps_detected(ji,1);
     ti = ti_jump-Npre-Nmeas;
@@ -268,17 +277,21 @@ for ji = 2:size(jumps_detected,1)-1
         rel_jump_ts_3 = [rel_jump_ts_3; rel_jump_ts(3,:)];
     end
     Fstats_ts = [Fstats_ts; Fstats(all_range)'];
-    
-%     if pickjumps(size(jumps_measured,1))==1
-%     if size(jumps_measured,1) < 6
-%         figure;
-%         plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,rel_jump_ts(1,:),'k'); hold on
-%         plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,rel_jump_ts(2,:),'b');
-%         yyaxis right
-%         plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,Fstats(all_range));%-Nsamples));
-%         tvect_ts = tvect(all_range);
-%         1;
-%     end
+    fpj = find(pickjumps);
+%     if size(jumps_measured,1)==1
+    if pickjumps(size(jumps_measured,1)) == 1
+        figure;
+        plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,rel_jump_ts(1,:),'k'); hold on
+        plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,rel_jump_ts(2,:),'b');
+        yyaxis right
+        plot(tvect(1:size(rel_jump_ts,2))-tmeas-tjump_pre,Fstats(all_range));%-Nsamples));
+        plot((-tmeas-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+        plot((-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+        plot((tjump-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+        plot((tjump-tjump_pre+tmeas)*[1 1],ylim,'-','Color',[1 .5 .5]);
+        1;
+%         break
+    end
 end
 
 % have user choose output file to avoid overwriting
@@ -289,7 +302,7 @@ end
 pickjumps = boolean(zeros(size(jumps_measured,1),1));
 for ii=1:length(pickjumps)
     for jj=1:size(brush,1)
-        if brush(jj,1)==jumps_measured(ii,9) && brush(jj,2)==jumps_measured(ii,5), pickjumps(ii)=1; end
+        if brush(jj,1)==jumps_measured(ii,1) && brush(jj,2)==jumps_measured(ii,2), pickjumps(ii)=1; end
     end
 end
 
@@ -298,7 +311,7 @@ end
 % jumps0 = jumps_measured(:,5)<1000;
 % jumps1 = jumps_measured(:,5)>5000 & jumps_measured(:,4) > .09;
 alljumps = boolean(ones(size(jumps_measured,1),1));
-usejumps = jumps_measured(:,8)==1;
+usejumps = pickjumps;%jumps_measured(:,8)==1;
 
 med_rel_jump = [median(rel_jump_ts_1(usejumps,:)); median(rel_jump_ts_2(usejumps,:))];
 % med_rel_jump = [median(rel_jump_ts_1); median(rel_jump_ts_2)];
@@ -309,7 +322,7 @@ med_Fstats = median(Fstats_ts(usejumps,:));
 % med_Fstats = median(Fstats_ts);
 
 figure;
-tvect_med_jump=tvect(1:size(med_rel_jump,2))-tmeas;
+tvect_med_jump=tvect(1:size(med_rel_jump,2))-tmeas-tjump_pre;
 fvect_med_jump_1=med_rel_jump(1,:);
 fvect_med_jump_2=med_rel_jump(2,:);
 plot(tvect_med_jump,fvect_med_jump_1,'k'); hold on
@@ -322,6 +335,10 @@ xlabel('Time (s)');
 ylabel('Normalized jump');
 yyaxis right
 plot(tvect_med_jump,med_Fstats);
+plot((-tmeas-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+plot((-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+plot((tjump-tjump_pre)*[1 1],ylim,'-','Color',[1 .5 .5]);
+ plot((tjump-tjump_pre+tmeas)*[1 1],ylim,'-','Color',[1 .5 .5]);
 if nmodes == 2
     legend('Mode 1','Mode 2','F stat');
 elseif nmodes == 3
@@ -341,8 +358,8 @@ end
 % plot(xtofit_aj+t0_exp,.8874*exp(-138.1*xtofit_aj),'r');
 1;
 
-% figure;
-% plot(jumps_measured(:,6),jumps_measured(:,7),'.');
+figure;
+plot(jumps_measured(:,1),jumps_measured(:,2),'.');
 
 %% calculate deviation from jump signature
 % 
