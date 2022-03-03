@@ -17,7 +17,7 @@ function npeaks = count_peaks(Fstats,ti1,ti2,Fdetect,Fmeas,hi_thresh,lo_thresh)
     peakfound = 0;
     
     tii = 0;
-    while ti+tii < ti2 && tii < length(Fstats)-ti
+    while ti+tii < ti2 && tii < length(Fstats)
         tii = tii+1;
         if peakfound == 0
             if Fstats(ti+tii) > Fstathi
@@ -27,8 +27,7 @@ function npeaks = count_peaks(Fstats,ti1,ti2,Fdetect,Fmeas,hi_thresh,lo_thresh)
                 Fstatlo = Fstats(ti+tii);
                 peakfound = 1;
             end
-        end
-        if peakfound == 1
+        elseif peakfound == 1
             if Fstats(ti+tii) < Fstatlo
                 Fstatlo = Fstats(ti+tii);
             elseif Fstats(ti+tii) > Fstatlo*lo_thresh && Fstats(ti+tii) > Fmeas

@@ -130,13 +130,15 @@ while ti < tfin-tlag_buffer
         ti = ti+1;
     else
         tii = 0;
-        while tii < tfin-ti && Fstats(ti+tii) > Fstat_thresh_detect
+        while Fstats(ti+tii) > Fstat_thresh_detect && tii < tfin 
             tii = tii+1;
         end
         t_above_thresh = tii;
         Fstatmax = max(Fstats(ti:ti+tii));
         % by convention jump happens 1 sample before it can be measured
         ti_jump = ti+tii-Npre-1;
+        % columns are time of detected jump, max of F statistic of jump, 
+        % time index of jump, time index crossing above then below threshold
         jumps_detected = [jumps_detected; tvect(ti_jump) Fstatmax ti_jump ti ti+tii];
                       
         % start looking for next jump after this one
@@ -305,7 +307,7 @@ end
 
 %% Optionally plot specific jumps of interest
 
-plotjumps = []; % list of indexes in jumps_measured to plot
+plotjumps = find(pickjumps);%[]; % list of indexes in jumps_measured to plot
 
 % optionally plot specific jumps of interest
 for pi = 1:length(plotjumps)
@@ -314,7 +316,10 @@ for pi = 1:length(plotjumps)
     ti_jump = jumps_measured(ji,5); 
     ti = ti_jump-Nmeas;
     all_range = ti:ti+2*Nmeas+Njump-1;
-    rel_jump_ts = [rel_jump_ts_1(ji,:); rel_jump_ts_2(ji,:); rel_jump_ts_3(ji,:)];
+    rel_jump_ts = [rel_jump_ts_1(ji,:); rel_jump_ts_2(ji,:)];
+    if nmodes==3
+        rel_jump_ts = [rel_jump_ts; rel_jump_ts_3(ji,:)];
+    end
     plot_jump(nmodes,tvect(all_range),rel_jump_ts,Fstats(all_range),tmeas,tjump,tjump_pre);
 end
 
