@@ -1,7 +1,7 @@
 mode = 3;
 
 if mode == 0
-    % Reset parameters used for outlier selection and display plots
+    %% Reset parameters used for outlier selection and display plots
     brush1 = [];
     brush2 = [];
     brush3 = [];
@@ -19,6 +19,7 @@ if mode == 0
     
 
 elseif mode == 1
+    %% Update selection based on brush values on plot
     plotoutliers = 1;
 
     % Manual Outlier Detection     
@@ -26,7 +27,7 @@ elseif mode == 1
     jumps_selected1 = false(size(jumps_measured,1),1);
     for ii=1:length(usejumps)
         for jj=1:size(brush1,1)
-            if brush1(jj,1)==jumps_measured(ii,1) && brush1(jj,2)==jumps_measured(ii,2), jumps_selected1(ii)=1; end
+            if brush1(jj,1)==jumps_measured(ii,2) && brush1(jj,2)==jumps_measured(ii,3), jumps_selected1(ii)=1; end
         end
     end
     
@@ -60,27 +61,31 @@ elseif mode == 1
     title('Outliers');
     info_plots;
 elseif mode == 2
+    %% Select outlisers based on rigidly defined thresholds
     plotoutliers = 1;
-    pickjumps = false(size(jump_stats,1),1);
+    ppickjumps = false(size(jump_stats,1),1);
+    
     for ji = 1:length(pickjumps)
         
         Fstatmax = jump_stats(ji,1);
         t_abovethresh = jump_stats(ji,4);
         t_fwhm = jump_stats(ji,5);
-        npeaks = jump_stats(ji,end);
+        euc_dist = jump_stats_v_median(ji,1);
+        pos_jump = jumps_measured(ji,2) > 0 || jumps_measured(ji,3) > 0;
+        if nmodes ==3
+            pos_jump = pos_jump || jumps_measured(ji,3) > 0;
+        end
         
-        if t_abovethresh > 0.2 || t_fwhm < 0.06 % 0.1x snr synthetic
-    %     if t_abovethresh > 0.2 || t_abovethresh <0.14 || t_fwhm < 0.067 || npeaks > 1 % 1x snr
+    %     if (euc_dist > 15 && Fstatmax > 1E5) || euc_dist > 100 || Fstatmax > 1E6 || t_fwhm < 0.06 || pos_jump  % 10x snr synthetic
+        if euc_dist > 30 || Fstatmax > 1E4 || t_fwhm < 0.06 || pos_jump  % 1x snr synthetic
+    %     if euc_dist > 30 || Fstatmax > 2E3 || t_fwhm < 0.06 || pos_jump  % 0.5x snr synthetic
           pickjumps(ji) = 1; 
         end
     end
     info_plots;
 elseif mode == 3
     %% Optionally plot specific jumps of interest
-    
-    plotjumps = find(pickjumps);%[]; % list of indexes in jumps_measured to plot
-    
-    % optionally plot specific jumps of interest
+    plotjumps = find(pickjumps);
     for pi = 1:length(plotjumps)
         
         ji = plotjumps(pi);
@@ -93,10 +98,14 @@ elseif mode == 3
         end
         plot_jump(nmodes,tvect(all_range),rel_jump_ts,Fstats(all_range),tmeas,tjump,tjump_pre);
     end
+
 elseif mode == 4
-    % Should plot only the non-outlier data on with the info plots
+    %% Should plot only the non-outlier data on with the info plots
     plotoutliers = 0;
 
+elseif mode == 5
+    %% save the usable jumps from jumps_measured (now having been processed)
+    writematrix(jumps_measured(usejumps,:),uiputfile());
 end
 
     
