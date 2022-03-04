@@ -1,12 +1,14 @@
 %% Set constants
 
 nmodes = 2;
-data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
+data_type = 'data';     % choose from 'noise', 'data', 'synthetic'
 if nmodes == 2
     tsample = .00025;        % seconds per sample
     tmeas_detect = .1;      % time window for detecting jump (before and after samples)
-    tjump = .09;             % time window for (full) jump itself
-    tjump_pre = .08;         % portion of jump window before F threshold crossing 
+    tjump = .09;             % time window for (full) jump itself; for 1-10x snr
+    tjump_pre = .08;         % portion of jump window before F threshold crossing; for 1-10x snr
+%     tjump = .12;             % time window for (full) jump itself; for 0.5x snr
+%     tjump_pre = .11;         % portion of jump window before F threshold crossing; for 0.5x snr
     tmeas = .2;              % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
@@ -24,7 +26,7 @@ Npre = floor(tjump_pre/tsample);
 
 % F stat threshold for detection and measurement
 Fstat_thresh_detect = 300;
-Fstat_thresh_meas = 1000; % low snr
+Fstat_thresh_meas = 600;
 
 % initialize vectors for selecting outliers
 brush1 = [];
@@ -186,7 +188,8 @@ for ji = 2:size(jumps_detected,1)-1
     xbar = median(fvect_xi,2);
     ybar = median(fvect_yi,2);
     rel_jump = ybar./xbar-1;
-    jumps_measured = [jumps_measured; rel_jump' jumps_detected(ji,:)];
+    % columns are: time of jump (s), df1, df2, df3, etc.
+    jumps_measured = [jumps_measured; t_curr rel_jump'];
     
     ti1 = jumps_detected(ji,4);
     ti2 = jumps_detected(ji,5);
@@ -258,17 +261,17 @@ for ji = 1:size(jumps_measured,1)
 end
 
 %% Plot various jump statistics to find outliers
-usejumps = alljumps;
-% usejumps = ~pickjumps;
-plotoutliers = 1;
+% usejumps = alljumps;
+usejumps = ~pickjumps;
+plotoutliers = 0;
 
 % scatter plot of fingerprint vector
 figure;
-plot(jumps_measured(usejumps,1),jumps_measured(usejumps,2),'.');
+plot(jumps_measured(usejumps,2),jumps_measured(usejumps,3),'.');
 xlabel('df1'); ylabel('df2');
 if plotoutliers
     hold on
-    plot(jumps_measured(pickjumps,1),jumps_measured(pickjumps,2),'.');
+    plot(jumps_measured(pickjumps,2),jumps_measured(pickjumps,3),'.');
 end
 
 % F stat max vs Euclidean dist
@@ -301,7 +304,7 @@ end
 jumps_selected1 = false(size(jumps_measured,1),1);
 for ii=1:length(usejumps)
     for jj=1:size(brush1,1)
-        if brush1(jj,1)==jumps_measured(ii,1) && brush1(jj,2)==jumps_measured(ii,2), jumps_selected1(ii)=1; end
+        if brush1(jj,1)==jumps_measured(ii,2) && brush1(jj,2)==jumps_measured(ii,3), jumps_selected1(ii)=1; end
     end
 end
 
@@ -333,12 +336,15 @@ for ji = 1:length(pickjumps)
     Fstatmax = jump_stats(ji,1);
     t_abovethresh = jump_stats(ji,4);
     t_fwhm = jump_stats(ji,5);
-    npeaks = jump_stats(ji,end);
     euc_dist = jump_stats_v_median(ji,1);
+    pos_jump = jumps_measured(ji,2) > 0 || jumps_measured(ji,3) > 0;
+    if nmodes ==3
+        pos_jump = pos_jump || jumps_measured(ji,3) > 0;
+    end
     
-    if (euc_dist > 15 && Fstatmax > 1E5) || euc_dist > 100 || Fstatmax > 1E6 || t_fwhm < 0.06  % 0.1x snr synthetic
-%     if t_abovethresh > 0.2 || t_fwhm < 0.06 % 0.1x snr synthetic
-%     if t_abovethresh > 0.2 || t_abovethresh <0.14 || t_fwhm < 0.067 || npeaks > 1 % 1x snr
+%     if (euc_dist > 15 && Fstatmax > 1E5) || euc_dist > 100 || Fstatmax > 1E6 || t_fwhm < 0.06 || pos_jump  % 10x snr synthetic
+    if euc_dist > 30 || Fstatmax > 1E4 || t_fwhm < 0.06 || pos_jump  % 1x snr synthetic
+%     if euc_dist > 30 || Fstatmax > 2E3 || t_fwhm < 0.06 || pos_jump  % 0.5x snr synthetic
       pickjumps(ji) = 1; 
     end
 end
@@ -364,5 +370,5 @@ end
 %% Output chosen jumps
 % have user choose output file to avoid overwriting
 % writematrix(jumps_measured,uiputfile());
-% writematrix(jumps_measured(usejumps,:),uiputfile());
+writematrix(jumps_measured(usejumps,:),uiputfile());
 
