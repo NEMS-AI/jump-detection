@@ -1,4 +1,11 @@
-mode = 3;
+% Mode 0 Reset Plotting
+% Mode 1 Update outliers based on brushing 
+% Mode 2 Use Thresholds for Outliers
+% Mode 3 Display Selected Outlier Data
+% Mode 4 Plot only Non-Outlier Data
+% Mode 5 Write results to file
+
+mode = 4;
 
 if mode == 0
     %% Reset parameters used for outlier selection and display plots
@@ -100,8 +107,14 @@ elseif mode == 3
     end
 
 elseif mode == 4
-    %% Should plot only the non-outlier data on with the info plots
+    %% Reset parameters used for outlier selection and display plots
     plotoutliers = 0;
+
+    [med_rel_jump, med_Fstats] = get_median_jump(~pickjumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
+    jump_range = 1:length(med_Fstats);
+    plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),tmeas,tjump,tjump_pre);
+    title('Non-outliers');
+    info_plots;
 
 elseif mode == 5
     %% save the usable jumps from jumps_measured (now having been processed)
