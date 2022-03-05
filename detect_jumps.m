@@ -64,6 +64,8 @@ elseif strcmp(data_type, 'noise') || strcmp(data_type, 'synthetic')
     tlag_mode2_per_second = 0;
     tlag_mode3_per_second = 0;
     tlag_buffer = 0;
+    Nlag_m2 = 0;
+    Nlag_m3 = 0;
 end
 
 % preprocess to remove drift? invert the below:
@@ -203,13 +205,9 @@ for ji = 2:size(jumps_detected,1)-1
     jump_stats = [jump_stats; peakstats npeaks];
     
     % Todo: use cells to improve flexbility
-    tlag_m2 = (tvect(ti)+tstart)*tlag_mode2_per_second;
-    Nlag_m2 = floor(tlag_m2/tsample);
     if nmodes == 2
         rel_jump_ts = ([fvect(1,all_range); fvect(2,all_range+Nlag_m2)]-ybar)./(xbar-ybar);
     elseif nmodes == 3 
-        tlag_m3 = (tvect(ti)+tstart)*tlag_mode3_per_second;
-        Nlag_m3 = floor(tlag_m3/tsample);
         rel_jump_ts = ([fvect(1,all_range); fvect(2,all_range+Nlag_m2); ...
                         fvect(3,all_range+Nlag_m3);]-ybar)./(xbar-ybar);
     end
