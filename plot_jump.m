@@ -3,6 +3,8 @@ function plot_jump(nmodes,tvect,rel_jump_ts,Fstats,Fstat_med,tmeas,tjump,tjump_p
 % measurement and jump intervals. tvect and Fstats inputs should be 
 % passed in as the range of interest.
     showlegend = 0;
+    normalize = 0;
+    plotmedian = 0;
     figure;
     plot(tvect-tmeas-tjump_pre,rel_jump_ts(1,:),'k'); hold on
     plot(tvect-tmeas-tjump_pre,rel_jump_ts(2,:),'b');
@@ -12,9 +14,21 @@ function plot_jump(nmodes,tvect,rel_jump_ts,Fstats,Fstat_med,tmeas,tjump,tjump_p
     xlabel('Time (s)');
     ylabel('Normalized jump');
     yyaxis right
-    plot(tvect-tmeas-tjump_pre,Fstats);
-    plot(tvect-tmeas-tjump_pre,Fstat_med);
-    ylabel('F statistic');
+    if normalize
+        plot(tvect-tmeas-tjump_pre,Fstats/max(Fstats));
+        if plotmedian
+            plot(tvect-tmeas-tjump_pre,Fstat_med/max(Fstat_med));
+        end
+    else
+        plot(tvect-tmeas-tjump_pre,Fstats);
+        if plotmedian
+            plot(tvect-tmeas-tjump_pre,Fstat_med);
+        end
+    end
+    ylabel('log(F statistic)');
+%     ylabel('log(F statistic) (Normalized)');
+    ylims = ylim;
+    ylim([ylims(1) ylims(2)*1.05]);
     ylims = ylim;
     xlims = xlim;
     rectangle('Position',[-tjump_pre ylims(1) tjump ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.1],'EdgeColor',[1 0 0 0]);
