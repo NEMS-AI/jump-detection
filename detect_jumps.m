@@ -1,14 +1,14 @@
 %% Set constants
 
 nmodes = 2;
-data_type = 'data';     % choose from 'noise', 'data', 'synthetic'
+data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
 if nmodes == 2
     tsample = .00025;        % seconds per sample
     tmeas_detect = .1;      % time window for detecting jump (before and after samples)
-    tjump = .09;             % time window for (full) jump itself; for 1-10x snr
-    tjump_pre = .08;         % portion of jump window before F threshold crossing; for 1-10x snr
-%     tjump = .12;             % time window for (full) jump itself; for 0.5x snr
-%     tjump_pre = .11;         % portion of jump window before F threshold crossing; for 0.5x snr
+%     tjump = .09;             % time window for (full) jump itself; for 1-10x snr
+%     tjump_pre = .08;         % portion of jump window before F threshold crossing; for 1-10x snr
+    tjump = .12;             % time window for (full) jump itself; for 0.5x snr
+    tjump_pre = .11;         % portion of jump window before F threshold crossing; for 0.5x snr
     tmeas = .2;              % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
@@ -32,6 +32,7 @@ Fstat_thresh_meas = 600;
 brush1 = [];
 brush2 = [];
 brush3 = [];
+brush4 = [];
 
 %% Load data
 
@@ -187,9 +188,14 @@ for ji = 2:size(jumps_detected,1)-1
 
     xbar = median(fvect_xi,2);
     ybar = median(fvect_yi,2);
+    sigma_x = cov(fvect_xi');
+    sigma_y = cov(fvect_yi');
+    sigma_pool = sigma_x/2 + sigma_y/2;
     rel_jump = ybar./xbar-1;
+    rel_err = [sqrt(sigma_pool(1,1)) sqrt(sigma_pool(2,2))]./fvect(:,1)';
+%     err_angle = 
     % columns are: time of jump (s), df1, df2, df3, etc.
-    jumps_measured = [jumps_measured; t_curr rel_jump'];
+    jumps_measured = [jumps_measured; t_curr rel_jump' rel_err];
     
     ti1 = jumps_detected(ji,4);
     ti2 = jumps_detected(ji,5);
@@ -225,45 +231,46 @@ pickjumps = false(size(jumps_measured,1),1);
 % usejumps = alljumps; % use all jumps (do this first)
 usejumps = ~pickjumps; % use jumps except those selected as outliers according to criteria in next section
 
-[med_rel_jump, med_Fstats] = get_median_jump(~pickjumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-jump_range = 1:length(med_Fstats);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Non-outliers');
-
-[med_rel_jump, med_Fstats] = get_median_jump(pickjumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-jump_range = 1:length(med_Fstats);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Outliers');
-
+% all jumps
 [med_rel_jump, med_Fstats] = get_median_jump(alljumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
 jump_range = 1:length(med_Fstats);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('All points');
+plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),log10(med_Fstats),tmeas,tjump,tjump_pre);
+title('All jumps');
 
 %% Calculate deviation from median F stat vs time
 
 tmax = tvect(med_Fstats==max(med_Fstats));
-% only use points with time less than that of the maximum F stat
-tweight = double(tvect(1:length(med_Fstats)) < tmax)';
-% columns are: Euclidean distance (for the portion to the left of the
-% maximum), and cosine similarity (for the portion to the left of maximum)
+tthresh = tvect(med_Fstats==max(med_Fstats));
+% use points with time less than jump threshold crossing
+tweight1 = double(tvect(1:length(med_Fstats)) < tmeas+tjump_pre)';
+% use points with time less than that of the maximum F stat
+tweight2 = double(tvect(1:length(med_Fstats)) < tmax)';
+% columns are Euclidean distance: for the portion to the left of jump
+% threshold, and for the portion to the left of maximum.
 jump_stats_v_median = zeros(size(jump_stats,1),2);
 for ji = 1:size(jumps_measured,1)
     
     med_Fstats_norm = log10(med_Fstats)/max(log10(med_Fstats));
     Fstats_ts_norm = log10(Fstats_ts(ji,:))/max(log10(Fstats_ts(ji,:)));
-    euc_dist = sum(tweight.*(Fstats_ts_norm - med_Fstats_norm).^2);
-    cos_sim = (tweight.*med_Fstats_norm) * (tweight.*Fstats_ts_norm)';
-    cos_sim = cos_sim / (norm(tweight.*med_Fstats_norm) * norm(tweight.*Fstats_ts_norm));
-    jump_stats_v_median(ji,1) = euc_dist;
-    jump_stats_v_median(ji,2) = cos_sim;
+    euc_dist1 = sum(tweight1.*(Fstats_ts_norm - med_Fstats_norm).^2);
+    euc_dist2 = sum(tweight2.*(Fstats_ts_norm - med_Fstats_norm).^2);
+    jump_stats_v_median(ji,1) = euc_dist1;
+    jump_stats_v_median(ji,2) = euc_dist2;
     
 end
 
 %% Plot various jump statistics to find outliers
 % usejumps = alljumps;
+% pickjumps = false(size(jumps_measured,1),1);
+% % pickjumps = outliers;
+% brush1 = [];
+% brush2 = [];
+% brush3 = [];
+% brush4 = [];
+% plotoutliers = 0;
 usejumps = ~pickjumps;
-plotoutliers = 0;
+% usejumps = pickjumps5;
+plotoutliers = 1;
 
 % scatter plot of fingerprint vector
 figure;
@@ -271,8 +278,19 @@ plot(jumps_measured(usejumps,2),jumps_measured(usejumps,3),'.');
 xlabel('df1'); ylabel('df2');
 if plotoutliers
     hold on
-    plot(jumps_measured(pickjumps,2),jumps_measured(pickjumps,3),'.');
+    plot(jumps_measured(pickjumps1,2),jumps_measured(pickjumps1,3),'.');
+    plot(jumps_measured(pickjumps2,2),jumps_measured(pickjumps2,3),'.');
+    plot(jumps_measured(pickjumps3,2),jumps_measured(pickjumps3,3),'.');
+    plot(jumps_measured(pickjumps4,2),jumps_measured(pickjumps4,3),'.');
 end
+
+% figure; hold on
+% for ji = 1:size(jumps_measured,1)
+%     if ~usejumps(ji), continue; end
+% %     if abs(jumps_measured(ji,4)) > .5e-6 || abs(jumps_measured(ji,5)) > .5e-6, continue; end
+%     plot_ellipse(jumps_measured(ji,4),jumps_measured(ji,5),jumps_measured(ji,2),jumps_measured(ji,3),0,[0 0 1 0.2]);
+% end
+% xlabel('df1'); ylabel('df2');
 
 % F stat max vs Euclidean dist
 figure;
@@ -283,17 +301,49 @@ set(gca, 'YScale', 'log');
 set(gca, 'XScale', 'log');
 if plotoutliers
     hold on
-    plot(jump_stats(pickjumps,1),jump_stats_v_median(pickjumps,1),'.');
+    plot(jump_stats(pickjumps1,1),jump_stats_v_median(pickjumps1,1),'.');
+    plot(jump_stats(pickjumps2,1),jump_stats_v_median(pickjumps2,1),'.');
+    plot(jump_stats(pickjumps3,1),jump_stats_v_median(pickjumps3,1),'.');
+    plot(jump_stats(pickjumps4,1),jump_stats_v_median(pickjumps4,1),'.');
 end
 
-% FWHM vs time above threshold
+% % FWHM vs time above threshold
+% figure;
+% plot(jump_stats(usejumps,4),jump_stats(usejumps,5),'.');
+% xlabel('Time above threshold (s)');
+% ylabel('FWHM (s)');
+% if plotoutliers
+%     hold on
+%     plot(jump_stats(pickjumps,4),jump_stats(pickjumps,5),'.');
+% end
+
+% FWHM vs F stat
 figure;
-plot(jump_stats(usejumps,4),jump_stats(usejumps,5),'.');
-xlabel('Time above threshold (s)');
-ylabel('FWHM (s)');
+plot(jump_stats(usejumps,5),jump_stats(usejumps,1),'.');
+xlabel('FWHM (s)');
+ylabel('F stat max');
+set(gca, 'YScale', 'log');
 if plotoutliers
     hold on
-    plot(jump_stats(pickjumps,4),jump_stats(pickjumps,5),'.');
+    plot(jump_stats(pickjumps1,5),jump_stats(pickjumps1,1),'.');
+    plot(jump_stats(pickjumps2,5),jump_stats(pickjumps2,1),'.');
+    plot(jump_stats(pickjumps3,5),jump_stats(pickjumps3,1),'.');
+    plot(jump_stats(pickjumps4,5),jump_stats(pickjumps4,1),'.');
+end
+
+% FWHM vs F stat
+figure;
+plot(jump_stats(usejumps,5),jump_stats_v_median(usejumps,1),'.');
+xlabel('FWHM (s)');
+ylabel('Euclidean dist');
+set(gca, 'YScale', 'log');
+if plotoutliers
+    hold on
+    plot(jump_stats(pickjumps1,5),jump_stats_v_median(pickjumps1,1),'.');
+    plot(jump_stats(pickjumps2,5),jump_stats_v_median(pickjumps2,1),'.');
+    plot(jump_stats(pickjumps3,5),jump_stats_v_median(pickjumps3,1),'.');
+    plot(jump_stats(pickjumps4,5),jump_stats_v_median(pickjumps4,1),'.');
+%     plot(jump_stats(pickjumps2,5),jump_stats_v_median(pickjumps2,1),'.');
 end
 
 %% Manually choose outliers or jumps of interest by interacting with figures
@@ -312,7 +362,7 @@ end
 jumps_selected2 = false(size(jumps_measured,1),1);
 for ii=1:length(usejumps)
     for jj=1:size(brush2,1)
-        if brush2(jj,1)==jump_stats(ii,4) && brush2(jj,2)==jump_stats(ii,1), jumps_selected2(ii)=1; end
+        if brush2(jj,1)==jump_stats(ii,1) && brush2(jj,2)==jump_stats_v_median(ii,1), jumps_selected2(ii)=1; end
     end
 end
 
@@ -320,15 +370,28 @@ end
 jumps_selected3 = false(size(jumps_measured,1),1);
 for ii=1:length(usejumps)
     for jj=1:size(brush3,1)
-        if brush3(jj,1)==jump_stats(ii,4) && brush3(jj,2)==jump_stats(ii,5), jumps_selected3(ii)=1; end
+        if brush3(jj,1)==jump_stats(ii,5) && brush3(jj,2)==jump_stats(ii,1), jumps_selected3(ii)=1; end
     end
 end
 
-% pickjumps = jumps_selected1 | jumps_selected2 | jumps_selected3;
-pickjumps2 = jumps_selected1 | jumps_selected2 | jumps_selected3;
+% pick jumps on FWHM vs time above threshold
+jumps_selected4 = false(size(jumps_measured,1),1);
+for ii=1:length(usejumps)
+    for jj=1:size(brush4,1)
+        if brush4(jj,1)==jump_stats(ii,5) && brush4(jj,2)==jump_stats_v_median(ii,1), jumps_selected4(ii)=1; end
+    end
+end
+
+% pickjumps = jumps_selected1 | jumps_selected2 | jumps_selected3 | jumps_selected4;
+pickjumps2 = jumps_selected1;
 
 %% Manually choose outliers or jumps of interest using cutoffs of statistics
 
+pickjumps1 = false(size(jump_stats,1),1);
+pickjumps2 = false(size(jump_stats,1),1);
+pickjumps3 = false(size(jump_stats,1),1);
+pickjumps4 = false(size(jump_stats,1),1);
+pickjumps5 = false(size(jump_stats,1),1);
 pickjumps = false(size(jump_stats,1),1);
 
 for ji = 1:length(pickjumps)
@@ -337,17 +400,44 @@ for ji = 1:length(pickjumps)
     t_abovethresh = jump_stats(ji,4);
     t_fwhm = jump_stats(ji,5);
     euc_dist = jump_stats_v_median(ji,1);
+    euc_dist2 = jump_stats_v_median(ji,2);
     pos_jump = jumps_measured(ji,2) > 0 || jumps_measured(ji,3) > 0;
     if nmodes ==3
         pos_jump = pos_jump || jumps_measured(ji,3) > 0;
     end
     
-%     if (euc_dist > 15 && Fstatmax > 1E5) || euc_dist > 100 || Fstatmax > 1E6 || t_fwhm < 0.06 || pos_jump  % 10x snr synthetic
-    if euc_dist > 30 || Fstatmax > 1E4 || t_fwhm < 0.06 || pos_jump  % 1x snr synthetic
-%     if euc_dist > 30 || Fstatmax > 2E3 || t_fwhm < 0.06 || pos_jump  % 0.5x snr synthetic
-      pickjumps(ji) = 1; 
-    end
+     if euc_dist > 30
+         pickjumps1(ji) = 1;
+     elseif t_fwhm < .06  % .0625 for 10x snr?
+         pickjumps2(ji) = 1;
+     elseif pos_jump
+         pickjumps3(ji) = 1;
+     elseif Fstatmax > 1E4   % 1x snr; use 7E5 for 10x snr; use 2E3 for 0.5x snr
+         pickjumps4(ji) = 1;
+     elseif t_fwhm > .08
+         pickjumps5(ji) = 1;
+     end
 end
+
+pickjumps = pickjumps1 | pickjumps2 | pickjumps3 | pickjumps4;
+
+%% Plot median behavior of various events of interest
+
+[med_rel_jump1, med_Fstats1] = get_median_jump(pickjumps1,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
+plot_jump(nmodes,tvect(jump_range),med_rel_jump1,log10(med_Fstats1),log10(med_Fstats),tmeas,tjump,tjump_pre);
+title('Large Euclidean distance');
+
+[med_rel_jump2, med_Fstats2] = get_median_jump(pickjumps2,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
+plot_jump(nmodes,tvect(jump_range),med_rel_jump2,med_Fstats2,med_Fstats,tmeas,tjump,tjump_pre);
+title('Short FWHM');
+
+[med_rel_jump3, med_Fstats3] = get_median_jump(pickjumps3,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
+plot_jump(nmodes,tvect(jump_range),med_rel_jump3,log10(med_Fstats3),log10(med_Fstats),tmeas,tjump,tjump_pre);
+title('Long FWHM');
+
+[med_rel_jump0, med_Fstats0] = get_median_jump(~pickjumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
+plot_jump(nmodes,tvect(jump_range),med_rel_jump0,log10(med_Fstats0),log10(med_Fstats),tmeas,tjump,tjump_pre);
+title('Non-outliers');
 
 %% Optionally plot specific jumps of interest
 
