@@ -64,6 +64,8 @@ elseif strcmp(data_type, 'noise') || strcmp(data_type, 'synthetic')
     tlag_mode2_per_second = 0;
     tlag_mode3_per_second = 0;
     tlag_buffer = 0;
+    Nlag_m2 = 0;
+    Nlag_m3 = 0;
 end
 
 % preprocess to remove drift? invert the below:
