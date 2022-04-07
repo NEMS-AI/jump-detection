@@ -4,7 +4,7 @@ function plot_jump(nmodes,tvect,rel_jump_ts,Fstats,Fstat_med,tmeas,tjump,tjump_p
 % passed in as the range of interest.
     showlegend = 0;
     normalize = 0;
-    plotmedian = 0;
+    plotmedian = 1;
     figure;
     plot(tvect-tmeas-tjump_pre,rel_jump_ts(1,:),'k'); hold on
     plot(tvect-tmeas-tjump_pre,rel_jump_ts(2,:),'b');
