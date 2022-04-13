@@ -19,10 +19,10 @@ function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,ti3,ti4,ti5,tfin)
 %     Fstats_i = Fstats(ti1:ti3)/max(Fstats(ti1:ti3)); % normalize
     Fstats_i = log10(Fstats(ti1:ti5)); % take log
     
-    peaks_right = 0; % flag if F stat goes significantly above threshold in post-jump window; not used
-    tvect_right = tvect(ti5+1:ti3); % time and F stats vector after jump time
-    Fstats_right = log10(Fstats(ti5+1:ti3));
-    if sum(Fstats_right > Fstats_i(end)*1.25) > 0, peaks_right = 1; end
+%     peaks_right = 0; % flag if F stat goes significantly above threshold in post-jump window; not used
+%     tvect_right = tvect(ti5+1:ti3); % time and F stats vector after jump time
+%     Fstats_right = log10(Fstats(ti5+1:ti3));
+%     if sum(Fstats_right > Fstats_i(end)*1.25) > 0, peaks_right = 1; end
     
     %  find FWHM 
     peak_left_i = ti_Fstatmax;
@@ -49,10 +49,10 @@ function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,ti3,ti4,ti5,tfin)
     t_mean = trapz(tvect_i,tvect_i.*Fstats_i/Fint_0);
     t_mean_rel = t_mean - tvect(ti5);
     F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/Fint_0);
-%     F_skew = trapz(tvect_i,(tvect_i-t_mean).^3.*Fstats_i/Fint_0)/F_var^1.5;
-%     F_kurt = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/Fint_0)/F_var^2;
+    F_skew = trapz(tvect_i,(tvect_i-t_mean).^3.*Fstats_i/Fint_0)/F_var^1.5;
+    F_kurt = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/Fint_0)/F_var^2;
 
     t_bif = 0; % time spent above bifurcation point (not used)
-    peak_stats = [Fstatmax t_mean_rel tvect(t_fwhm+1) tvect(t_bif+1) tvect(t_above_thresh+1) sqrt(F_var) peaks_right];
+    peak_stats = [Fstatmax t_mean_rel tvect(t_fwhm+1) tvect(t_bif+1) tvect(t_above_thresh+1) sqrt(F_var) F_skew F_kurt];
 end
 
