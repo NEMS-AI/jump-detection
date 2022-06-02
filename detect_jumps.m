@@ -196,7 +196,7 @@ for ji = 2:size(jumps_detected,1)-1
     rel_jump = ybar./xbar-1;
     rel_err = [sqrt(sigma_pool(1,1)) sqrt(sigma_pool(2,2))]./fvect(:,1)';
     err_rho = sigma_pool(1,2)/(sqrt(sigma_pool(1,1))*sqrt(sigma_pool(2,2)));
-%     err_angle = 
+
     % columns are: time of jump (s), df1, df2, df3, etc., relative error, 
     % time index of jump.
     jumps_measured = [jumps_measured; t_curr rel_jump' rel_err err_rho ti_curr];
@@ -232,55 +232,6 @@ end
 
 alljumps = true(size(jumps_measured,1),1);
 pickjumps = false(size(jumps_measured,1),1);
-
-%% Calculate and plot median jump so far 
-
-% usejumps = alljumps; % use all jumps (do this first)
-usejumps = ~pickjumps; % use jumps except those selected as outliers according to criteria in next section
-
-% all jumps
-[med_rel_jump, med_Fstats] = get_median_jump(alljumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-jump_range = 1:length(med_Fstats);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),log10(med_Fstats),tmeas,tjump,tjump_pre);
-% title('All jumps');
-
-% optionally plot specific jumps
-% jump_range = 1:length(med_Fstats);
-% for ji=1:size(jumps_selected6,1)
-%     if jumps_selected6(ji)
-%         jump_stats(ji,:)
-%         plot_jump(nmodes,tvect(jump_range),[rel_jump_ts_1(ji,:); rel_jump_ts_2(ji,:)],log10(Fstats_ts(ji,:)),log10(med_Fstats),tmeas,tjump,tjump_pre);
-%     end
-% end
-
-%% Calculate deviation from median F stat vs time
-
-tmax = tvect(med_Fstats==max(med_Fstats));
-tthresh = tvect(med_Fstats==max(med_Fstats));
-% use points with time in first 3/4 of pre-jump measurement window (up to
-% "bifurcation point")
-tweight1 = double(tvect(1:length(med_Fstats)) < .75*tmeas)';
-% use points with time less than that of the maximum F stat
-tweight2 = double(tvect(1:length(med_Fstats)) < tmax)';
-% columns are (1) RMSE between F stat vs time and median such
-% data, in the pre-jump measurement window, (2) RMSE of the log
-% of that data.
-jump_stats_v_median = zeros(size(jump_stats,1),2);
-for ji = 1:size(jumps_measured,1)
-    
-    % various normalization methods applied to median statistics; some unused
-    med_Fstats_norm = med_Fstats/max(med_Fstats);
-    Fstats_ts_norm = Fstats_ts(ji,:)/max(Fstats_ts(ji,:));
-    med_Fstats_log10 = log10(med_Fstats);
-    Fstats_ts_log10 = log10(Fstats_ts(ji,:));
-    med_Fstats_norm_log10 = log10(med_Fstats)/max(log10(med_Fstats));
-    Fstats_ts_norm_log10 = log10(Fstats_ts(ji,:))/max(log10(Fstats_ts(ji,:)));
-    rmse = sqrt(sum(tweight1.*(Fstats_ts_norm - med_Fstats_norm).^2)/sum(tweight1));
-    rmse_log10 = sqrt(sum(tweight1.*(Fstats_ts_log10 - med_Fstats_log10).^2)/sum(tweight1));
-    jump_stats_v_median(ji,1) = rmse;
-    jump_stats_v_median(ji,2) = rmse_log10;
-    
-end
 
 %% Plot various jump statistics to find outliers
 % usejumps = alljumps;
@@ -352,7 +303,7 @@ plot(jumps_measured(usejumps,2),jumps_measured(usejumps,3),'.','MarkerSize',7);
 % legend('High standard deviation','Low FWHM','Remaining data','Location','northwest');
 
 
-% FWHM vs sqrt var
+% FWHM vs std dev
 figure; hold on
 % plot(jump_stats(usejumps,6),jump_stats(usejumps,3),'.','MarkerSize',7);
 % set(gca, 'YScale', 'log');
@@ -370,80 +321,6 @@ end
 plot(jump_stats(usejumps,6),jump_stats(usejumps,3),'.','MarkerSize',7);
 xlabel('Standard deviation (s)');
 ylabel('FWHM (s)');
-% legend('High standard deviation','Low FWHM','Remaining data');
-
-% % t avg vs sqrt var
-% figure;
-% plot(jump_stats(usejumps,6),jump_stats(usejumps,2),'.','MarkerSize',7);
-% xlabel('sqrt var (s)');
-% ylabel('t avg (s)');
-% % set(gca, 'YScale', 'log');
-% if plotoutliers == 1
-%     hold on
-%     plot(jump_stats(pickjumps1,6),jump_stats(pickjumps1,2),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps2,6),jump_stats(pickjumps2,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps3,6),jump_stats(pickjumps3,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps4,6),jump_stats(pickjumps4,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps5,6),jump_stats(pickjumps5,2),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps6,6),jump_stats(pickjumps6,2),'.','MarkerSize',7);
-% %     legend('High F stat max','Median F stat max','Low F stat max','Very Low F stat max','Outliers');
-%     legend('Fingerprint curve','High Sqrt Var','Low FWHM','Remaining outliers');
-% end
-
-% % rmse vs sqrt var
-% figure;
-% plot(jump_stats(usejumps,6),jump_stats_v_median(usejumps,2),'.','MarkerSize',7);
-% xlabel('sqrt var (s)');
-% ylabel('RMSE compared with median');
-% % set(gca, 'YScale', 'log');
-% if plotoutliers == 1
-%     hold on
-%     plot(jump_stats(pickjumps1,6),jump_stats_v_median(pickjumps1,2),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps2,6),jump_stats_v_median(pickjumps2,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps3,6),jump_stats_v_median(pickjumps3,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps4,6),jump_stats_v_median(pickjumps4,2),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps5,6),jump_stats_v_median(pickjumps5,2),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps6,6),jump_stats_v_median(pickjumps6,2),'.','MarkerSize',7);
-% %     legend('High F stat max','Median F stat max','Low F stat max','Very Low F stat max','Outliers');
-%     legend('Fingerprint curve','High Sqrt Var','Low FWHM','Remaining outliers');
-% end
-
-% % FWHM vs F stat max
-% figure;
-% plot(jump_stats(usejumps,6),jump_stats(usejumps,1),'.','MarkerSize',7);
-% xlabel('Sqrt var (s)');
-% ylabel('F stat max');
-% set(gca, 'YScale', 'log');
-% if plotoutliers == 1
-%     hold on
-%     plot(jump_stats(pickjumps1,6),jump_stats(pickjumps1,1),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps2,6),jump_stats(pickjumps2,1),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps3,6),jump_stats(pickjumps3,3),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps4,6),jump_stats(pickjumps4,3),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps5,6),jump_stats(pickjumps5,3),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps6,6),jump_stats(pickjumps6,1),'.','MarkerSize',7);
-% %     legend('High F stat max','Median F stat max','Low F stat max','Very Low F stat max','Outliers');
-%     legend('Fingerprint curve','High Sqrt Var','Low FWHM','Remaining outliers');
-% end
-
-% % Skew vs Kurt
-% figure;
-% plot(jump_stats(usejumps,6),jump_stats(usejumps,8),'.','MarkerSize',7);
-% xlabel('Std dev');
-% ylabel('Kurtosis');
-% % set(gca, 'YScale', 'log');
-% if plotoutliers == 1
-%     hold on
-%     plot(jump_stats(pickjumps1,6),jump_stats(pickjumps1,8),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps2,6),jump_stats(pickjumps2,8),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps3,7),jump_stats(pickjumps3,8),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps4,7),jump_stats(pickjumps4,8),'.','MarkerSize',7);
-% %     plot(jump_stats(pickjumps5,7),jump_stats(pickjumps5,8),'.','MarkerSize',7);
-%     plot(jump_stats(pickjumps6,6),jump_stats(pickjumps6,8),'.','MarkerSize',7);
-% %     legend('High F stat max','Median F stat max','Low F stat max','Very Low F stat max','Outliers');
-%     legend('Fingerprint curve','High Std dev','Low FWHM','Remaining outliers');
-% end
-
 
 %% Manually choose outliers or jumps of interest by interacting with figures
 % Use figures to manually select jumps of interest, label them as "brush1", "brush2", etc.
@@ -501,19 +378,20 @@ ylabel('FWHM (s)');
 % end
 
 % pickjumps = jumps_selected1 | jumps_selected2;
+
 %% retrieve manually selected jumps
 % jumps_selected are the manually selected points using the figure and "select data" features,
 % these can be stored in the workspace and recovered into "pickjumps" using these sections.
-pickjumps1 = jumps_selected1;
-pickjumps2 = jumps_selected2;
-pickjumps3 = jumps_selected3;
-pickjumps4 = jumps_selected4;
-pickjumps5 = jumps_selected5;
+% pickjumps1 = jumps_selected1;
+% pickjumps2 = jumps_selected2;
+% pickjumps3 = jumps_selected3;
+% pickjumps4 = jumps_selected4;
+% pickjumps5 = jumps_selected5;
 
 %%
-pickjumps6 = jumps_selected6;
+% pickjumps6 = jumps_selected6;
 
-%% Plot median behavior of various events of interest
+%% Plot median behavior ("jump signature") of various events of interest
 % 
 % [med_rel_jump0, med_Fstats0] = get_median_jump(alljumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
 % [med_rel_jump, med_Fstats] = get_median_jump(usejumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
@@ -539,70 +417,6 @@ pickjumps6 = jumps_selected6;
 [med_rel_jump, med_Fstats] = get_median_jump(pickjumps_mr,rel_jump_ts_1_pos,rel_jump_ts_2_pos,rel_jump_ts_3,Fstats_ts_pos);
 plot_jump(nmodes,tvect(jump_range),med_rel_jump,log10(med_Fstats),log10(med_Fstats),tmeas,tjump,tjump_pre);
 
-
-% below figures are used to plot median behavior of F stats vs time for
-% various selected points of interest to help determine selection criteria
-% for outliers
-
-% figure;
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats1));%/max(log10(med_Fstats1)));
-% hold on
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats2));%/max(log10(med_Fstats2)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats3));%/max(log10(med_Fstats3)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats4));%/max(log10(med_Fstats4)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats6));%/max(log10(med_Fstats6)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats7));%/max(log10(med_Fstats7)));
-% 
-% xlabel('Time (s)');
-% ylabel('log(F statistic)');
-% legend('High F stat max','Medium F stat max','Low F stat max','Very low F stat max','Large integral','Remaining outliers');
-% 
-% figure;
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats1)/max(log10(med_Fstats1)));
-% hold on
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats2)/max(log10(med_Fstats2)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats3)/max(log10(med_Fstats3)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats4)/max(log10(med_Fstats4)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats6)/max(log10(med_Fstats6)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,log10(med_Fstats7)/max(log10(med_Fstats7)));
-% 
-% xlabel('Time (s)');
-% ylabel('log(F statistic (normalized))');
-% legend('High F stat max','Medium F stat max','Low F stat max','Very low F stat max','Large integral','Remaining outliers');
-% 
-% figure;
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats1/max(med_Fstats1));%/max(log10(med_Fstats1)));
-% hold on
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats2/max(med_Fstats2));%/max(log10(med_Fstats2)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats3/max(med_Fstats3));%/max(log10(med_Fstats3)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats4/max(med_Fstats4));%/max(log10(med_Fstats4)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats6/max(med_Fstats6));%/max(log10(med_Fstats6)));
-% plot(tvect(jump_range)-tmeas-tjump_pre,med_Fstats7/max(med_Fstats7));%/max(log10(med_Fstats7)));
-
-% xlabel('Time (s)');
-% ylabel('F statistic (normalized)');
-% legend('High F stat max','Medium F stat max','Low F stat max','Very low F stat max','Large integral','Remaining outliers');
-% % ylims = ylim;
-% % ylim([ylims(1) ylims(2)*1.05]);
-% % ylims = ylim;
-% % xlims = xlim;
-% % rectangle('Position',[-tjump_pre ylims(1) tjump ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.1],'EdgeColor',[1 0 0 0]);
-% % plot((-tmeas-tjump_pre)*[1 1],ylim,'-','Color',[1 0 0 .8]);
-% % plot((-tjump_pre)*[1 1],ylim,'-','Color',[1 0 0 .8]);
-% % plot((tjump-tjump_pre)*[1 1],ylim,'-','Color',[1 0 0 .8]);
-% % plot((tjump-tjump_pre+tmeas)*[1 1],ylim,'-','Color',[1 0 0 .8]);
-
-% [med_rel_jump2, med_Fstats2] = get_median_jump(pickjumps2,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-% plot_jump(nmodes,tvect(jump_range),med_rel_jump2,log10(med_Fstats2),log10(med_Fstats),tmeas,tjump,tjump_pre);
-% title('Medium SNR');
-
-% [med_rel_jump3, med_Fstats3] = get_median_jump(pickjumps3,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-% plot_jump(nmodes,tvect(jump_range),med_rel_jump3,log10(med_Fstats3),log10(med_Fstats),tmeas,tjump,tjump_pre);
-% title('Small SNR');
-
-% [med_rel_jump4, med_Fstats4] = get_median_jump(pickjumps4,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-% plot_jump(nmodes,tvect(jump_range),med_rel_jump4,log10(med_Fstats4),log10(med_Fstats),tmeas,tjump,tjump_pre);
-% title('VSmall SNR');
 
 %% Manually choose outliers or jumps of interest using cutoffs of statistics
 
@@ -708,59 +522,33 @@ pickjumps = pickjumps0 | pickjumps1 | pickjumps2; % do not include F stat max
 % pickjumps = pickjumps0 | pickjumps1 | pickjumps2 | pickjumps3; % include F stat max
 % pickjumps = pickjumps0; % include all negative jumps
 
-%% Plot median behavior of various events of interest
+%% Optionally plot specific jumps of interest. 
 
-[med_rel_jump1, med_Fstats1] = get_median_jump(pickjumps1,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump1,log10(med_Fstats1),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Large RMSE');
-
-[med_rel_jump2, med_Fstats2] = get_median_jump(pickjumps2,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump2,log10(med_Fstats2),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Medium RMSE');
-
-[med_rel_jump3, med_Fstats3] = get_median_jump(pickjumps3,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump3,log10(med_Fstats3),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Small variance');
-
-[med_rel_jump4, med_Fstats4] = get_median_jump(pickjumps4,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump4,log10(med_Fstats4),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Large variance');
-
-[med_rel_jump5, med_Fstats5] = get_median_jump(pickjumps5,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump5,log10(med_Fstats5),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Large F stat max');
-
-[med_rel_jump0, med_Fstats0] = get_median_jump(~pickjumps,rel_jump_ts_1,rel_jump_ts_2,rel_jump_ts_3,Fstats_ts);
-plot_jump(nmodes,tvect(jump_range),med_rel_jump0,log10(med_Fstats0),log10(med_Fstats),tmeas,tjump,tjump_pre);
-title('Non-outliers');
-
-%% Optionally plot specific jumps of interest. TODO: needs debugging
-
-% pickjumps = alljumps;
-% plotjumps = find(pickjumps);%[]; % list of indexes in jumps_measured to plot
-plotjumps = [16 25 42];
-
-% optionally plot specific jumps of interest
-for pi = 1:length(plotjumps)
-    
-    ji = plotjumps(pi);
-    ti_jump = jumps_measured(ji,7); 
-    ti = ti_jump-Nmeas;
-    all_range = ti:ti+2*Nmeas+Njump-1;
-    rel_jump_ts = [rel_jump_ts_1(ji,:); rel_jump_ts_2(ji,:)];
-    if nmodes==3
-        rel_jump_ts = [rel_jump_ts; rel_jump_ts_3(ji,:)];
-    end
-    plot_jump_simple(nmodes,tvect(all_range),rel_jump_ts,Fstats(all_range),tmeas,tjump,tjump_pre);
-end
+% % pickjumps = alljumps;
+% % plotjumps = find(pickjumps);%[]; % list of indexes in jumps_measured to plot
+% plotjumps = [16 25 42];
+% 
+% % optionally plot specific jumps of interest
+% for pi = 1:length(plotjumps)
+%     
+%     ji = plotjumps(pi);
+%     ti_jump = jumps_measured(ji,7); 
+%     ti = ti_jump-Nmeas;
+%     all_range = ti:ti+2*Nmeas+Njump-1;
+%     rel_jump_ts = [rel_jump_ts_1(ji,:); rel_jump_ts_2(ji,:)];
+%     if nmodes==3
+%         rel_jump_ts = [rel_jump_ts; rel_jump_ts_3(ji,:)];
+%     end
+%     plot_jump_simple(nmodes,tvect(all_range),rel_jump_ts,Fstats(all_range),tmeas,tjump,tjump_pre);
+% end
 
 %% pick out only positive jumps and match with cluster
 
-pickjumps_pos = ~pickjumps0;
-rel_jump_ts_1_pos = rel_jump_ts_1(pickjumps_pos,:);
-rel_jump_ts_2_pos = rel_jump_ts_2(pickjumps_pos,:);
-Fstats_ts_pos = Fstats_ts(pickjumps_pos,:);
-pickjumps_mr = logical(clusters(:,8));
+% pickjumps_pos = ~pickjumps0;
+% rel_jump_ts_1_pos = rel_jump_ts_1(pickjumps_pos,:);
+% rel_jump_ts_2_pos = rel_jump_ts_2(pickjumps_pos,:);
+% Fstats_ts_pos = Fstats_ts(pickjumps_pos,:);
+% pickjumps_mr = logical(clusters(:,8));
 
 %% Output chosen jumps
 % have user choose output file to avoid overwriting
