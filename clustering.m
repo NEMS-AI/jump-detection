@@ -2,13 +2,13 @@
 epsilon10xSNR = 0.055;
 epsilon1xSNR = 0.045;
 epsilonGROEL = .038;
-epsilon = epsilonGROEL;
+epsilon = 1;
 
 % epsilon_scale = [1, 1/3, 1/6];
 epsilon_scale_10xSNR = [1 1/4 .14];
 epsilon_scale_1xSNR = [1 .35 .2];
 epsilon_scale_GROEL = [1 .5 .28];
-epsilon_scale = epsilon_scale_GROEL;
+epsilon_scale = [.02, .01, .005];
 
 Color1 = [61 38 168]/255;
 % Color1 = [0 0 0];
@@ -65,13 +65,23 @@ for eps = 1:length(epsilon_scale)
 %   Find the biggest cluster for assignment
     [cnt_unique, unique_a] = hist(idx,unique(idx));
     [M,I] = max(cnt_unique);
+    [M2,I2] = max(cnt_unique(cnt_unique<max(cnt_unique)));
     
+    
+    if unique_a(end) == -1
+        continue;
+    end
     for i = 1:length(idx)
-        if unique_a(I)>0 && idx(i) == unique_a(I)
+        if I == 1
+            if idx(i) == unique_a(I2+1)
+                final_clusters(i) = eps;
+            end
+        elseif idx(i) == unique_a(I)
             final_clusters(i) = eps;
         end
-    
     end
+    
+    
 
 end
 
