@@ -1,8 +1,13 @@
 
-epsilon_10xSNR = [.029 .0125 .0035];
-epsilon_1xSNR = [.0548 .01871 .00781];
-epsilon_GROEL = [.0239 .012 .0069];
+epsilon_10xSNR = [.02903 .012614 .003604];
+epsilon_1xSNR = [.05486 .01871 .00781];
+epsilon_GROEL = [.02393 .01202 .006907];
 epsilon = epsilon_GROEL;
+
+pts_10xSNR = [.673 .578 .297];
+pts_1xSNR = [.804 .673 .465];
+pts_GROEL = [.728 .5422 .2804];
+pts = pts_GROEL;
 
 % Color = [255 201 14]/255; % yellow
 % Color1 = [0 0 0]/255;   % black
@@ -31,25 +36,27 @@ X = [NormFeature1 NormFeature2];
 % Plot k-dist graph
 figure;
 KDistValues =  D(:,4);
-% plot(sort(KDistValues),'Color',Color1,'LineWidth',2)
-scatter(eps_range, eps_num/eps_num(end), "filled")
+plot(eps_range, eps_num/eps_num(end), '.','MarkerSize',14,'Color',Color1);
 set(gca, 'XScale', 'log');
-% xlim([0 length(KDistValues)]);
-% ylim([1e-4 1]);
+xlims = xlim;
+hold on;
+plot([epsilon(1) epsilon(1)],[0 pts(1)],'--','LineWidth',2,'Color',Color2);
+plot([epsilon(2) epsilon(2)],[0 pts(2)],'--','LineWidth',2,'Color',Color3);
+plot([epsilon(3) epsilon(3)],[0 pts(3)],'--','LineWidth',2,'Color',Color4);
+plot([xlims(1) epsilon(1)],[pts(1) pts(1)],'--','LineWidth',2,'Color',Color2);
+plot([xlims(1) epsilon(2)],[pts(2) pts(2)],'--','LineWidth',2,'Color',Color3);
+plot([xlims(1) epsilon(3)],[pts(3) pts(3)],'--','LineWidth',2,'Color',Color4);
+
+use_eps1 = eps_range < epsilon(1);
+use_eps2 = eps_range < epsilon(2);
+use_eps3 = eps_range < epsilon(3);
+plot(eps_range(use_eps1), eps_num(use_eps1)/eps_num(end), '.','MarkerSize',14,'Color',Color2);
+plot(eps_range(use_eps2), eps_num(use_eps2)/eps_num(end), '.','MarkerSize',14,'Color',Color3);
+plot(eps_range(use_eps3), eps_num(use_eps3)/eps_num(end), '.','MarkerSize',14,'Color',Color4);
 ylabel('Fraction of points in largest cluster');
 xlabel('Distance (\epsilon)');
-hold on;
 
-% Add epsilon lines to k-dist graph
-xl3 = xline(epsilon(3), '--','LineWidth',2);
-xl3.Color = Color4;
-hold on
-xl2 = xline(epsilon(2), '--','LineWidth',2);
-xl2.Color = Color3;
-xl1 = xline(epsilon(1), '--','LineWidth',2);
-xl1.Color = Color2;
-% legend('All data','Knee point','Restricted','More restricted','Location','northwest');
-legend('All data','Selection 1','Selection 2','Selection 3','Location','northwest');
+legend('All data','Restricted','More restricted','Most restricted','Location','northwest');
 
 % Get clustering set for each choice of epsilon
 final_clusters = zeros(length(Idx),1);
