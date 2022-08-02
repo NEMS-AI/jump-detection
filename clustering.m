@@ -1,19 +1,26 @@
 
-epsilon_10xSNR = [.02903 .012614 .003604];
-epsilon_1xSNR = [.05486 .01871 .00781];
-epsilon_GROEL = [.02393 .01202 .006907];
-epsilon = epsilon_GROEL;
+% epsilon_10xSNR = [.02903 .012614 .003604];
+% epsilon_1xSNR = [.05486 .01871 .00781];
+% epsilon_GROEL = [.02393 .01202 .006907];
+epsilon_10xSNR = [.019 .0037];
+epsilon_1xSNR = [.0146 .007];
+epsilon_GROEL = [.0142 .0072];
+epsilon = epsilon_GROEL(2);
 
-pts_10xSNR = [.673 .578 .297];
-pts_1xSNR = [.804 .673 .465];
-pts_GROEL = [.728 .5422 .2804];
-pts = pts_GROEL;
+% pts_10xSNR = [.673 .578 .297];
+% pts_1xSNR = [.804 .673 .465];
+% pts_GROEL = [.728 .5422 .2804];
+pts_10xSNR = [.62 .31];
+pts_1xSNR = [.62 .31];
+pts_GROEL = [.62 .31];
+
+pts = pts_GROEL(2);
 
 % Color = [255 201 14]/255; % yellow
 % Color1 = [0 0 0]/255;   % black
-% Color4 = [39 150 235]/255;  % blue
-Color1 = [61 38 168]/255;   % purple
-Color2 = [217 83 25]/255;   % orange
+Color2 = [39 150 235]/255;  % blue
+% Color2 = [61 38 168]/255;   % purple
+Color1 = [217 83 25]/255;   % orange
 Color3 = [34 177 76]/255;   % green
 Color4 = [77 190 238]/255;  % cyan
 
@@ -34,29 +41,29 @@ X = [NormFeature1 NormFeature2];
 [Idx,D] = knnsearch(X,X,'K',10);
 
 % Plot k-dist graph
-figure;
-KDistValues =  D(:,4);
-plot(eps_range, eps_num/eps_num(end), '.','MarkerSize',14,'Color',Color1);
-set(gca, 'XScale', 'log');
-xlims = xlim;
-hold on;
-plot([epsilon(1) epsilon(1)],[0 pts(1)],'--','LineWidth',2,'Color',Color2);
-plot([epsilon(2) epsilon(2)],[0 pts(2)],'--','LineWidth',2,'Color',Color3);
-plot([epsilon(3) epsilon(3)],[0 pts(3)],'--','LineWidth',2,'Color',Color4);
-plot([xlims(1) epsilon(1)],[pts(1) pts(1)],'--','LineWidth',2,'Color',Color2);
-plot([xlims(1) epsilon(2)],[pts(2) pts(2)],'--','LineWidth',2,'Color',Color3);
-plot([xlims(1) epsilon(3)],[pts(3) pts(3)],'--','LineWidth',2,'Color',Color4);
-
-use_eps1 = eps_range < epsilon(1);
-use_eps2 = eps_range < epsilon(2);
-use_eps3 = eps_range < epsilon(3);
-plot(eps_range(use_eps1), eps_num(use_eps1)/eps_num(end), '.','MarkerSize',14,'Color',Color2);
-plot(eps_range(use_eps2), eps_num(use_eps2)/eps_num(end), '.','MarkerSize',14,'Color',Color3);
-plot(eps_range(use_eps3), eps_num(use_eps3)/eps_num(end), '.','MarkerSize',14,'Color',Color4);
-ylabel('Fraction of points in largest cluster');
-xlabel('Distance (\epsilon)');
-
-legend('All data','Restricted','More restricted','Most restricted','Location','northwest');
+% figure;
+% KDistValues =  D(:,4);
+% plot(eps_range, eps_num/eps_num(end), '.','MarkerSize',14,'Color',Color1);
+% set(gca, 'XScale', 'log');
+% xlims = xlim;
+% hold on;
+% plot([epsilon(1) epsilon(1)],[0 pts(1)],'--','LineWidth',2,'Color',Color2);
+% plot([epsilon(2) epsilon(2)],[0 pts(2)],'--','LineWidth',2,'Color',Color3);
+% plot([epsilon(3) epsilon(3)],[0 pts(3)],'--','LineWidth',2,'Color',Color4);
+% plot([xlims(1) epsilon(1)],[pts(1) pts(1)],'--','LineWidth',2,'Color',Color2);
+% plot([xlims(1) epsilon(2)],[pts(2) pts(2)],'--','LineWidth',2,'Color',Color3);
+% plot([xlims(1) epsilon(3)],[pts(3) pts(3)],'--','LineWidth',2,'Color',Color4);
+% 
+% use_eps1 = eps_range < epsilon(1);
+% use_eps2 = eps_range < epsilon(2);
+% use_eps3 = eps_range < epsilon(3);
+% plot(eps_range(use_eps1), eps_num(use_eps1)/eps_num(end), '.','MarkerSize',14,'Color',Color2);
+% plot(eps_range(use_eps2), eps_num(use_eps2)/eps_num(end), '.','MarkerSize',14,'Color',Color3);
+% plot(eps_range(use_eps3), eps_num(use_eps3)/eps_num(end), '.','MarkerSize',14,'Color',Color4);
+% ylabel('Fraction of points in largest cluster');
+% xlabel('Distance (\epsilon)');
+% 
+% legend('All data','Restricted','More restricted','Most restricted','Location','northwest');
 
 % Get clustering set for each choice of epsilon
 final_clusters = zeros(length(Idx),1);
@@ -96,8 +103,8 @@ figure;
 % scatter(NormFeature1, NormFeature2, 15, final_clusters, "filled");
 plot(NormFeature1(final_clusters==0),NormFeature2(final_clusters==0),'.','MarkerSize',14); hold on
 plot(NormFeature1(final_clusters==1),NormFeature2(final_clusters==1),'.','MarkerSize',14); hold on
-plot(NormFeature1(final_clusters==2),NormFeature2(final_clusters==2),'.','MarkerSize',14); hold on
-plot(NormFeature1(final_clusters==3),NormFeature2(final_clusters==3),'.','MarkerSize',14); hold on
+% plot(NormFeature1(final_clusters==2),NormFeature2(final_clusters==2),'.','MarkerSize',14); hold on
+% plot(NormFeature1(final_clusters==3),NormFeature2(final_clusters==3),'.','MarkerSize',14); hold on
 xlabel('Standard deviation (normalized)');
 ylabel('FWHM (normalized)');
 colormap(cmap)
@@ -106,8 +113,8 @@ colormap(cmap)
 figure;
 plot(jumps_measured(final_clusters==0,2),jumps_measured(final_clusters==0,3),'.','MarkerSize',14); hold on
 plot(jumps_measured(final_clusters==1,2),jumps_measured(final_clusters==1,3),'.','MarkerSize',14); hold on
-plot(jumps_measured(final_clusters==2,2),jumps_measured(final_clusters==2,3),'.','MarkerSize',14); hold on
-plot(jumps_measured(final_clusters==3,2),jumps_measured(final_clusters==3,3),'.','MarkerSize',14); hold on
+% plot(jumps_measured(final_clusters==2,2),jumps_measured(final_clusters==2,3),'.','MarkerSize',14); hold on
+% plot(jumps_measured(final_clusters==3,2),jumps_measured(final_clusters==3,3),'.','MarkerSize',14); hold on
 % scatter(jumps_measured(:,2), jumps_measured(:,3), 15, final_clusters, "filled");
 xlabel('Relative frequency shift (Mode 1)');
 ylabel('Relative frequency shift (Mode 2)');
