@@ -1,3 +1,4 @@
+desired_fraction = 0.31;
 epsilon_sweep;
 epsilon = final_eps;
 pts = final_frac;

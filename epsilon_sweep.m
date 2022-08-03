@@ -59,7 +59,7 @@ ylabel('Fraction of points in largest cluster');
 xlabel('Distance (\epsilon)');
 
 % Specify the desired fraction of data set as 
-desired_fraction = 0.31;
+desired_fraction = desired_fraction;
 
 % Initialize parameters for search
 final_eps = eps_range(1);
