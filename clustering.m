@@ -1,20 +1,6 @@
-
-% epsilon_10xSNR = [.02903 .012614 .003604];
-% epsilon_1xSNR = [.05486 .01871 .00781];
-% epsilon_GROEL = [.02393 .01202 .006907];
-epsilon_10xSNR = [.019 .0037];
-epsilon_1xSNR = [.0146 .007];
-epsilon_GROEL = [.0142 .0072];
-epsilon = epsilon_GROEL(2);
-
-% pts_10xSNR = [.673 .578 .297];
-% pts_1xSNR = [.804 .673 .465];
-% pts_GROEL = [.728 .5422 .2804];
-pts_10xSNR = [.62 .31];
-pts_1xSNR = [.62 .31];
-pts_GROEL = [.62 .31];
-
-pts = pts_GROEL(2);
+epsilon_sweep;
+epsilon = final_eps;
+pts = final_frac;
 
 % Color = [255 201 14]/255; % yellow
 % Color1 = [0 0 0]/255;   % black

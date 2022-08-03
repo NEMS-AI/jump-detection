@@ -23,7 +23,7 @@ NormFeature2 =  (Feature2 - min(Feature2)) / ( max(Feature2) - min(Feature2) );
 
 
 X = [NormFeature1 NormFeature2];
-[Idx,D] = knnsearch(X,X,'K',10);
+[Idx,D] = knnsearch(X,X,'K',4);
 
 
 % Get clustering set for each choice of epsilon
@@ -58,6 +58,21 @@ set(gca, 'XScale', 'log');
 ylabel('Fraction of points in largest cluster');
 xlabel('Distance (\epsilon)');
 
+% Specify the desired fraction of data set as 
+desired_fraction = 0.31;
+
+% Initialize parameters for search
+final_eps = eps_range(1);
+final_frac = eps_num(1)/eps_num(end);
+
+% Search through eps_num to find point near desired fraction
+for i = 1:length(eps_num)
+    % If closer fraction is found, update final values
+    if eps_num(i)/eps_num(end) < desired_fraction
+        final_frac = eps_num(i)/eps_num(end);
+        final_eps = eps_range(i);
+    end
+end
 
 
 
