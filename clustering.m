@@ -1,20 +1,23 @@
-desired_fraction = 0.31;
-epsilon_sweep;
-epsilon = final_eps;
-pts = final_frac;
+% Specify the desired fraction of data set as 
+desired_fraction = .31;
 
-% Color = [255 201 14]/255; % yellow
-% Color1 = [0 0 0]/255;   % black
-Color2 = [39 150 235]/255;  % blue
-% Color2 = [61 38 168]/255;   % purple
-Color1 = [217 83 25]/255;   % orange
-Color3 = [34 177 76]/255;   % green
-Color4 = [77 190 238]/255;  % cyan
+% Specify range of epsilon values to sweep over
+eps_range = linspace(0.000,.1,1000);
 
-cmap = [Color1;
-  Color2; ...
-  Color3; ...
-  Color4];
+% Color used for various plots
+purple = [61 38 168]/255;   % purple
+orange = [217 83 25]/255;   % orange
+green = [34 177 76]/255;   % green
+blue = [39 150 235]/255;  % blue
+yellow = [255 201 14]/255; % yellow
+black = [0 0 0]/255;   % black
+cyan = [77 190 238]/255;  % cyan
+
+cmap = [blue;
+  green; ...
+  orange; ...
+  purple];
+set(groot,'defaultAxesColorOrder',cmap)
 
 % X axis = Feature 1, Y Axis = Feature 2
 Feature1 = jump_stats(:,6); 
@@ -25,32 +28,68 @@ NormFeature2 =  (Feature2 - min(Feature2)) / ( max(Feature2) - min(Feature2) );
 
 % Choosing cluster features and get k-dist for each point
 X = [NormFeature1 NormFeature2];
-[Idx,D] = knnsearch(X,X,'K',10);
+[Idx,D] = knnsearch(X,X,'K',4);
 
-% Plot k-dist graph
-% figure;
-% KDistValues =  D(:,4);
-% plot(eps_range, eps_num/eps_num(end), '.','MarkerSize',14,'Color',Color1);
-% set(gca, 'XScale', 'log');
-% xlims = xlim;
-% hold on;
-% plot([epsilon(1) epsilon(1)],[0 pts(1)],'--','LineWidth',2,'Color',Color2);
-% plot([epsilon(2) epsilon(2)],[0 pts(2)],'--','LineWidth',2,'Color',Color3);
-% plot([epsilon(3) epsilon(3)],[0 pts(3)],'--','LineWidth',2,'Color',Color4);
-% plot([xlims(1) epsilon(1)],[pts(1) pts(1)],'--','LineWidth',2,'Color',Color2);
-% plot([xlims(1) epsilon(2)],[pts(2) pts(2)],'--','LineWidth',2,'Color',Color3);
-% plot([xlims(1) epsilon(3)],[pts(3) pts(3)],'--','LineWidth',2,'Color',Color4);
-% 
-% use_eps1 = eps_range < epsilon(1);
-% use_eps2 = eps_range < epsilon(2);
-% use_eps3 = eps_range < epsilon(3);
-% plot(eps_range(use_eps1), eps_num(use_eps1)/eps_num(end), '.','MarkerSize',14,'Color',Color2);
-% plot(eps_range(use_eps2), eps_num(use_eps2)/eps_num(end), '.','MarkerSize',14,'Color',Color3);
-% plot(eps_range(use_eps3), eps_num(use_eps3)/eps_num(end), '.','MarkerSize',14,'Color',Color4);
-% ylabel('Fraction of points in largest cluster');
-% xlabel('Distance (\epsilon)');
-% 
-% legend('All data','Restricted','More restricted','Most restricted','Location','northwest');
+% Get clustering set for each choice of epsilon
+final_clusters = zeros(length(Idx),1);
+eps_num = zeros(length(eps_range),1);
+
+% Iterate over different choices of epsilon
+for eps = 1:length(eps_range)
+    idx = dbscan(X,eps_range(eps),4);
+
+    % Determine clusters dbscan found
+    unique_clusters = unique(idx);
+   
+    % Exclude the the case in which the only cluster is the noise-cluster
+    if unique_clusters(end) == -1
+        eps_num(eps) = 0;
+
+    else
+        % Count clusters and find largest cluster
+        [cnt_unique, unique_a] = hist(idx,unique_clusters);
+        [M,I] = max(cnt_unique);
+        
+        % If the largest cluster is noise-cluster,
+        % find second largest cluster
+        if I == 1
+            eps_num(eps) = max(cnt_unique(cnt_unique<max(cnt_unique)));
+  
+        else
+            eps_num(eps) = M;
+        end
+    end
+   
+end
+
+figure;
+scatter(eps_range,eps_num/eps_num(end), "filled")
+set(gca, 'XScale', 'log');
+ylabel('Fraction of points in largest cluster');
+xlabel('Distance (\epsilon)');
+
+% Initialize parameters for epsilon search
+final_eps = eps_range(1);
+final_frac = eps_num(1)/eps_num(end);
+
+% Search through eps_num to find point near desired fraction
+for i = 1:length(eps_num)
+    % If closer fraction is found, update final values
+    if eps_num(i)/eps_num(end) < desired_fraction
+        final_frac = eps_num(i)/eps_num(end);
+        final_eps = eps_range(i);
+    end
+end
+
+epsilon = final_eps;
+pts = final_frac;
+
+cmap = [orange;
+  blue; ...
+  green; ...
+  cyan];
+
+% Recolor plots based on multiple eps options
 
 % Get clustering set for each choice of epsilon
 final_clusters = zeros(length(Idx),1);
@@ -62,7 +101,6 @@ for eps = 1:length(epsilon)
     [cnt_unique, unique_a] = hist(idx,unique(idx));
     [M,I] = max(cnt_unique);
     [M2,I2] = max(cnt_unique(cnt_unique<max(cnt_unique)));
-    
     
     if unique_a(end) == -1
         continue;
@@ -76,9 +114,6 @@ for eps = 1:length(epsilon)
             final_clusters(i) = eps;
         end
     end
-    
-    
-
 end
 
 
