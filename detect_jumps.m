@@ -73,13 +73,13 @@ tfin = ttot-Ndetect*3-Njump;
 
 % plot relative frequencies
 figure;
-plot(tvect,fvect(1,:)/fvect(1,1),'k'); hold on
-plot(tvect,fvect(2,:)/fvect(2,1),'b');
+plot(tvect,fvect(1,:)/fvect(1,1)-1,'k'); hold on
+plot(tvect,fvect(2,:)/fvect(2,1)-1,'b');
 if nmodes == 3
     plot(tvect,fvect(3,:)/fvect(3,1),'r');
 end
 xlabel('Time (s)')
-ylabel('Relative frequency');
+ylabel('Relative frequency change');
 
 %% Calculate F statistic vs time for entire dataset
 
