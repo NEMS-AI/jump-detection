@@ -41,7 +41,7 @@ end
 % frequency noise in Hz
 sigma1 = adev1*m1_f0;
 sigma2 = adev2*m2_f0;
-% noise covariance matrix (over entire dataset)
+% noise covariance matrix (over entire dataset), used only to generate white noise
 SIGMA = [sigma1^2, rho*sigma1*sigma2;
          rho*sigma1*sigma2, sigma2^2];
 
@@ -81,14 +81,12 @@ for i=1:Niter
         sigma_pool_sample = sqrt((var(xi)+var(yi))/2);
         sigma_samples = [sigma_samples; sigma_pool_sample];
         t_m1 = (mean(xi)-mean(yi)) / (sigma_pool_sample * sqrt(2/Nsamples));
-%         stats(i) = abs(t_m1);
         stats(i) = t_m1;
     else
         xi = [f1(1:Nsamples)'; f2(1:Nsamples)'];
         yi = [f1(Njump+Nsamples+1:end)'; f2(Njump+Nsamples+1:end)'];
         xbar = mean(xi,2);
         ybar = mean(yi,2);
-        % individually sample pooled variance if you want
         sigma_x = cov(xi');
         sigma_y = cov(yi');
         sigma_pool = sigma_x/2 + sigma_y/2;
@@ -96,7 +94,6 @@ for i=1:Niter
         t2 = Nsamples/2*(xbar-ybar)'/sigma_pool*(xbar-ybar);
         Fstat = (2*Nsamples-p_dim-1)/(p_dim*(2*Nsamples-2))*t2;
         stats(i) = Fstat;
-%         stats(i) = t2;
     end
 end
 
@@ -117,7 +114,6 @@ end
 % calculate frequency shift corresponding to 1 sigma significance
 if Nmodes == 1
     tinv_1sig = stat_1sig;
-%     fmeandiff_1sig = tinv_1sig * sigma1 * sqrt(2/Nsamples);
     fmeandiff_1sig = tinv_1sig * mean(sigma_samples) * sqrt(2/Nsamples);
     fmeandiff_1sig / m1_f0
 else
@@ -194,22 +190,18 @@ for i=1:Niter
         xi = f1(1:Nsamples); yi = f1(Njump+Nsamples+1:end);
         sigma_pool_sample = sqrt((var(xi)+var(yi))/2);
         t_m1 = (mean(xi)-mean(yi)) / (sigma_pool_sample * sqrt(2/Nsamples));
-%         signif_1sig(i) = abs(t_m1) > stat_1sig;
         signif_1sig(i) = t_m1 > stat_1sig;
     else
         xi = [f1(1:Nsamples)'; f2(1:Nsamples)'];
         yi = [f1(Njump+Nsamples+1:end)'; f2(Njump+Nsamples+1:end)'];
         xbar = mean(xi,2);
         ybar = mean(yi,2);
-        % individually sample pooled variance if you want
         sigma_x = cov(xi');
         sigma_y = cov(yi');
         sigma_pool = sigma_x/2 + sigma_y/2;
-%         sigma_pool = SIGMA;
         t2 = Nsamples/2*(xbar-ybar)'/sigma_pool*(xbar-ybar);
         Fstat = (2*Nsamples-p_dim-1)/(p_dim*(2*Nsamples-2))*t2;
         signif_1sig(i) = Fstat > stat_1sig;
-%         signif_1sig(i) = t2 > stat_1sig;
     end
 end
 
