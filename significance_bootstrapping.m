@@ -1,5 +1,4 @@
 
-clear all
 noise_type = 'exp'; % 'white', 'pink', 'exp'
 Nmodes = 2; % 1 or 2
 p_dim = Nmodes;
