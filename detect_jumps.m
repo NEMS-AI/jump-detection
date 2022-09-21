@@ -134,15 +134,16 @@ while ti < tfin-tlag_buffer
             tii = tii+1;
         end
         t_above_thresh = tii;
-        % columns are: Fstat max, time index of Fstat max, time index of
-        % peak estimated from going backwards from right edge
+        % columns are: Fstat max, time index of Fstat max, 
+        % time index of peak estimated from left edge,
+        % time index of peak estimated going backwards from right edge
         peakstats_simple = get_peak_stats_simple(Fstats,ti,ti+tii,tfin); 
         Fstatmax = peakstats_simple(1);
         % by convention jump happens 1 sample before it can be measured
         if strcmp(jump_type,'inst')
             ti_jump = peakstats_simple(2);
         else
-            ti_jump = peakstats_simple(3);
+            ti_jump = peakstats_simple(4);
         end
         % columns are time of detected jump, max of F statistic of jump, 
         % time index of jump, time index crossing above then below threshold
