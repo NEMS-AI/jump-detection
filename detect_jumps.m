@@ -1,34 +1,36 @@
 %% Set constants
 
 nmodes = 2;
-data_type = 'synthetic';     % choose from 'noise', 'data', 'synthetic'
+data_type = 'synthetic';        % choose from 'noise', 'data', 'synthetic'
+jump_type = 'decay';            % choose from 'inst', 'decay'
 if nmodes == 2
-    tsample = .00025;        % seconds per sample
-    tmeas_detect = .1;      % time window for detecting jump (before and after samples)
-    tjump = .09;             % time window for (full) jump itself; for 1-10x snr
-    tjump_pre = .08;         % portion of jump window before F threshold crossing; for 1-10x snr
+    tsample = .00025;           % seconds per sample
+    tmeas = .2;          % time window for measuring jump (before and after samples)
+    if strcmp(jump_type, 'inst')
+        tjump = 0;  
+    else
+        tjump = .05;            % time window for jump dynamic
+%         tjump = .09;             % time window for (full) jump itself; for 1-10x snr
+%         tjump = .05; % low snr synthetic
 %     tjump = .12;             % time window for (full) jump itself; for 0.5x snr
-%     tjump_pre = .11;         % portion of jump window before F threshold crossing; for 0.5x snr
-    tmeas = .2;              % 200 ms for final measurement of jump height
+    end
+    %tmeas = .2;               % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
-    tmeas_detect = 1;     % 1-10s optimal detection window
+    tmeas = 1;     % 1-10s optimal detection window
     tjump = 1;            % not sure exact PLL settings
-    tjump_pre = 0.5;
-    tmeas = 1; 
 end
-tjump_post = tjump - tjump_pre; % portion of jump window after F threshold crossing
 
 % number of samples associated with different time windows
-Ndetect = floor(tmeas_detect/tsample); 
+Nmeas = floor(tmeas/tsample); 
 Njump = floor(tjump/tsample);
-Npre = floor(tjump_pre/tsample);
 
 % F stat threshold for detection and measurement
-Fstat_thresh_detect = 300;
-Fstat_thresh_meas = 600;
+Fstat_thresh = 700;
 
 %% Load data
+
+% TODO: MOVE PREPROCESSING CODE
 
 [tvect, fvect] = load_data(filenames, data_type, nmodes);
 
@@ -68,7 +70,7 @@ end
 
 % last time point
 ttot = length(tvect);
-tfin = ttot-Ndetect*3-Njump;
+tfin = ttot-Nmeas*3-Njump;
 % tfin = floor(tfin/30);   % optionally use subset of data to peek at results
 
 % plot relative frequencies
@@ -89,8 +91,8 @@ for ti=1+tlag_buffer:tfin-tlag_buffer % allow for time lag in either direction
    
     fprintf('\b\b\b\b\b\b\b%5.02f%%\n',ti/ttot*100); 
     
-    xi_range = ti:ti+Ndetect-1;
-    yi_range = ti+Ndetect+Njump:ti+2*Ndetect+Njump-1;
+    xi_range = ti:ti+Nmeas-1;
+    yi_range = ti+Nmeas+Njump:ti+2*Nmeas+Njump-1;
 
     if tlag_mode2_per_second == 0 && (nmodes < 3 || tlag_mode3_per_second == 0)
         fvect_xi = fvect(:,xi_range);
@@ -103,10 +105,10 @@ for ti=1+tlag_buffer:tfin-tlag_buffer % allow for time lag in either direction
     sigma_x = cov(fvect_xi');
     sigma_y = cov(fvect_yi');
     sigma_pool = sigma_x/2 + sigma_y/2;
-    t2 = Ndetect/2*((xbar-ybar)'/sigma_pool)*(xbar-ybar);
+    t2 = Nmeas/2*((xbar-ybar)'/sigma_pool)*(xbar-ybar);
     p_dim = nmodes;
-    Fstat = (2*Ndetect-p_dim-1)/(p_dim*(2*Ndetect-2))*t2;
-    Fstats(ti+Ndetect) = Fstat;
+    Fstat = (2*Nmeas-p_dim-1)/(p_dim*(2*Nmeas-2))*t2;
+    Fstats(ti+Nmeas) = Fstat;
     
 end
 
@@ -124,17 +126,24 @@ fprintf('jumps_detected:         ');
 while ti < tfin-tlag_buffer
     
     fprintf('\b\b\b\b\b\b\b%5.01f%%\n',ti/ttot*100); 
-    if Fstats(ti) < Fstat_thresh_detect
+    if Fstats(ti) < Fstat_thresh
         ti = ti+1;
     else
         tii = 0;
-        while Fstats(ti+tii) > Fstat_thresh_detect && tii < tfin 
+        while Fstats(ti+tii) > Fstat_thresh && tii < tfin 
             tii = tii+1;
         end
         t_above_thresh = tii;
-        Fstatmax = max(Fstats(ti:ti+tii));
+        % columns are: Fstat max, time index of Fstat max, time index of
+        % peak estimated from going backwards from right edge
+        peakstats_simple = get_peak_stats_simple(Fstats,ti,ti+tii,tfin); 
+        Fstatmax = peakstats_simple(1);
         % by convention jump happens 1 sample before it can be measured
-        ti_jump = ti+tii-Npre-1;
+        if strcmp(jump_type,'inst')
+            ti_jump = peakstats_simple(2);
+        else
+            ti_jump = peakstats_simple(3);
+        end
         % columns are time of detected jump, max of F statistic of jump, 
         % time index of jump, time index crossing above then below threshold
         jumps_detected = [jumps_detected; tvect(ti_jump) Fstatmax ti_jump ti ti+tii];
@@ -146,7 +155,7 @@ end
 
 %% Measure jumps that are tmeas apart and collect stats on those jumps
 
-Nmeas = floor(tmeas/tsample);
+% Nmeas = floor(tmeas/tsample);
 jumps_measured = [];
 jump_stats = [];
 rel_jump_ts_1 = [];
@@ -155,6 +164,7 @@ rel_jump_ts_3 = [];
 Fstats_ts = [];
 
 fprintf('jumps_measured:         ');
+% TODO: include first and last jumps
 for ji = 2:size(jumps_detected,1)-1
         
     fprintf('\b\b\b\b\b\b\b%5.0f%%\n',ji/size(jumps_detected,1)*100); 
@@ -163,14 +173,19 @@ for ji = 2:size(jumps_detected,1)-1
     ti_curr = jumps_detected(ji,3);
     t_next = jumps_detected(ji+1,1);
     Fstatmax = jumps_detected(ji,2);
-    
-    if t_curr - tjump_pre < t_prev + tmeas + tjump_post || ...
-       t_next - tjump_pre < t_curr + tmeas + tjump_post, continue; end
+    twidth_curr = tvect(jumps_detected(ji,5)-jumps_detected(ji,4)+1);
 
-    if Fstatmax < Fstat_thresh_meas, continue; end
+    if twidth_curr < tjump, continue; end
+    
+    % TODO: revisit this!
+    if t_curr < t_prev + tmeas + tjump || ...
+       t_next < t_curr + tmeas + tjump, continue; end
+
+    if Fstatmax < Fstat_thresh, continue; end
 
     ti_jump = jumps_detected(ji,3); 
     ti = ti_jump-Nmeas;
+
     xi_range = ti:ti+Nmeas-1;
     yi_range = ti+Nmeas+Njump:ti+2*Nmeas+Njump-1;
     all_range = ti:ti+2*Nmeas+Njump-1;
@@ -201,7 +216,7 @@ for ji = 2:size(jumps_detected,1)-1
     ti4 = jumps_detected(ji,4);
     ti5 = jumps_detected(ji,5);
     peakstats = get_peak_stats(Fstats,tvect,ti1,ti2,ti3,ti4,ti5,tfin); 
-    npeaks = count_peaks(Fstats,ti1,ti2,Fstat_thresh_detect,Fstat_thresh_meas,0.5,1.5); 
+    npeaks = count_peaks(Fstats,ti1,ti2,Fstat_thresh,Fstat_thresh,0.5,1.5); 
     
     % columns are: Fstatmax, time average of F stats relative to jump time, F stat FWHM
     % F stat time above bifurcation point (unused, set to 0), F stat time above threshold,
@@ -226,5 +241,5 @@ end
 
 %% Output chosen jumps
 % have user choose output file to avoid overwriting
-writematrix(jumps_measured,uiputfile());
-writematrix(jump_stats,uiputfile());
+% writematrix(jumps_measured,uiputfile());
+% writematrix(jump_stats,uiputfile());
