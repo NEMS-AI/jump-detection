@@ -9,12 +9,9 @@ if nmodes == 2
     if strcmp(jump_type, 'inst')
         tjump = 0;  
     else
-        tjump = .05;            % time window for jump dynamic
-%         tjump = .09;             % time window for (full) jump itself; for 1-10x snr
-%         tjump = .05; % low snr synthetic
-%     tjump = .12;             % time window for (full) jump itself; for 0.5x snr
+        tjump = .06;            % time window for jump dynamic
+        tjump_offset = -.005;     % jump time offset
     end
-    %tmeas = .2;               % 200 ms for final measurement of jump height
 elseif nmodes == 3
     tsample = 0.02;
     tmeas = 1;     % 1-10s optimal detection window
@@ -24,6 +21,7 @@ end
 % number of samples associated with different time windows
 Nmeas = floor(tmeas/tsample); 
 Njump = floor(tjump/tsample);
+Njump_offset = floor(tjump_offset/tsample);
 
 % F stat threshold for detection and measurement
 Fstat_thresh = 700;
@@ -140,10 +138,11 @@ while ti < tfin-tlag_buffer
         peakstats_simple = get_peak_stats_simple(Fstats,ti,ti+tii,tfin); 
         Fstatmax = peakstats_simple(1);
         % by convention jump happens 1 sample before it can be measured
+        % include manual offset in location of detected jump
         if strcmp(jump_type,'inst')
-            ti_jump = peakstats_simple(2);
+            ti_jump = peakstats_simple(2)+Njump_offset;
         else
-            ti_jump = peakstats_simple(4);
+            ti_jump = peakstats_simple(4)+Njump_offset;
         end
         % columns are time of detected jump, max of F statistic of jump, 
         % time index of jump, time index crossing above then below threshold
