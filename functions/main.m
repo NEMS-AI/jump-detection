@@ -1,6 +1,6 @@
 %% Load data
 % Assume data is in correct format for csv
-filenames = "short_test.csv";
+filenames = "isolated_1000snr.csv";
 % filenames = "14_decay_exp_data.csv";
 
 % Load in data and associated parameters
@@ -12,7 +12,7 @@ jumps_detected = detect(params, Fstats);
 jumps_detected = preprocess(params, jumps_detected);
 
 %TODO Move 
-[jumps_measured, jump_stats] = measure(params, jumps_detected, Fstats);
+[jumps_measured, jump_stats, rel_jump_ts] = measure(params, jumps_detected, Fstats);
 
 % TODO turn clustering into seperate function
 % Figure what to do with current assortment of plots

@@ -1,4 +1,4 @@
-function [jumps_measured, jump_stats] = measure(params, jumps_detected, Fstats)
+function [jumps_measured, jump_stats, rel_jump_ts_1] = measure(params, jumps_detected, Fstats)
 % Measure jumps that are tmeas apart and collect stats on those jumps
 
 % Variable Initialization
