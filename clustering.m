@@ -1,5 +1,6 @@
 % Specify the desired fraction of data set as 
-desired_fraction = .31;
+desired_fraction = .6;
+% desired_fraction = .2;
 
 % Specify range of epsilon values to sweep over
 eps_range = linspace(0.000,.1,1000);
@@ -20,7 +21,7 @@ cmap = [blue;
 set(groot,'defaultAxesColorOrder',cmap)
 
 % X axis = Feature 1, Y Axis = Feature 2
-Feature1 = jump_stats(:,6); 
+Feature1 = jump_stats(:,4); 
 Feature2 = jump_stats(:,3);
 
 NormFeature1 =  (Feature1 - min(Feature1)) / ( max(Feature1) - min(Feature1) );
@@ -120,6 +121,7 @@ end
 set(groot,'defaultAxesColorOrder',cmap)
 
 
+
 % Plot clusters in in feature space
 figure;
 % scatter(NormFeature1, NormFeature2, 15, final_clusters, "filled");
@@ -133,8 +135,8 @@ colormap(cmap)
 
 % Plot clusters in frequency space
 figure;
-plot(jumps_measured(final_clusters==0,2),jumps_measured(final_clusters==0,3),'.','MarkerSize',14); hold on
-plot(jumps_measured(final_clusters==1,2),jumps_measured(final_clusters==1,3),'.','MarkerSize',14); hold on
+plot(jumps_measured(final_clusters==0,5),jumps_measured(final_clusters==0,6),'.','MarkerSize',14); hold on
+plot(jumps_measured(final_clusters==1,5),jumps_measured(final_clusters==1,6),'.','MarkerSize',14); hold on
 % plot(jumps_measured(final_clusters==2,2),jumps_measured(final_clusters==2,3),'.','MarkerSize',14); hold on
 % plot(jumps_measured(final_clusters==3,2),jumps_measured(final_clusters==3,3),'.','MarkerSize',14); hold on
 % scatter(jumps_measured(:,2), jumps_measured(:,3), 15, final_clusters, "filled");
