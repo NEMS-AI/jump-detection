@@ -1,6 +1,5 @@
 % Specify the desired fraction of data set as 
-desired_fraction = .6;
-% desired_fraction = .2;
+desired_fraction = [.6 .4];
 
 % Specify range of epsilon values to sweep over
 eps_range = linspace(0.000,.1,1000);
@@ -69,21 +68,27 @@ set(gca, 'XScale', 'log');
 ylabel('Fraction of points in largest cluster');
 xlabel('Distance (\epsilon)');
 
-% Initialize parameters for epsilon search
-final_eps = eps_range(1);
-final_frac = eps_num(1)/eps_num(end);
+epsilon = zeros(size(desired_fraction));
+pts = zeros(size(desired_fraction));
 
-% Search through eps_num to find point near desired fraction
-for i = 1:length(eps_num)
-    % If closer fraction is found, update final values
-    if eps_num(i)/eps_num(end) < desired_fraction
-        final_frac = eps_num(i)/eps_num(end);
-        final_eps = eps_range(i);
+for di = 1:length(desired_fraction)
+
+    % Initialize parameters for epsilon search
+    final_eps = eps_range(1);
+    final_frac = eps_num(1)/eps_num(end);
+    
+    % Search through eps_num to find point near desired fraction
+    for i = 1:length(eps_num)
+        % If closer fraction is found, update final values
+        if eps_num(i)/eps_num(end) < desired_fraction(di)
+            final_frac = eps_num(i)/eps_num(end);
+            final_eps = eps_range(i);
+        end
     end
+    
+    epsilon(di) = final_eps;
+    pts(di) = final_frac;
 end
-
-epsilon = final_eps;
-pts = final_frac;
 
 cmap = [orange;
   blue; ...
@@ -127,7 +132,7 @@ figure;
 % scatter(NormFeature1, NormFeature2, 15, final_clusters, "filled");
 plot(NormFeature1(final_clusters==0),NormFeature2(final_clusters==0),'.','MarkerSize',14); hold on
 plot(NormFeature1(final_clusters==1),NormFeature2(final_clusters==1),'.','MarkerSize',14); hold on
-% plot(NormFeature1(final_clusters==2),NormFeature2(final_clusters==2),'.','MarkerSize',14); hold on
+plot(NormFeature1(final_clusters==2),NormFeature2(final_clusters==2),'.','MarkerSize',14); hold on
 % plot(NormFeature1(final_clusters==3),NormFeature2(final_clusters==3),'.','MarkerSize',14); hold on
 xlabel('Standard deviation (normalized)');
 ylabel('FWHM (normalized)');
@@ -137,7 +142,7 @@ colormap(cmap)
 figure;
 plot(jumps_measured(final_clusters==0,5),jumps_measured(final_clusters==0,6),'.','MarkerSize',14); hold on
 plot(jumps_measured(final_clusters==1,5),jumps_measured(final_clusters==1,6),'.','MarkerSize',14); hold on
-% plot(jumps_measured(final_clusters==2,2),jumps_measured(final_clusters==2,3),'.','MarkerSize',14); hold on
+plot(jumps_measured(final_clusters==2,5),jumps_measured(final_clusters==2,6),'.','MarkerSize',14); hold on
 % plot(jumps_measured(final_clusters==3,2),jumps_measured(final_clusters==3,3),'.','MarkerSize',14); hold on
 % scatter(jumps_measured(:,2), jumps_measured(:,3), 15, final_clusters, "filled");
 xlabel('Relative frequency shift (Mode 1)');
