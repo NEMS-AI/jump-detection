@@ -11,11 +11,11 @@ if nmodes == 2
         tjump_offset = 0;
     else
         % 10x SNR
-        tjump = .06;            % time window for jump dynamic
-        tjump_offset = -.005;     % jump time offset
-        % 1x SNR
-%         tjump = .1;            % time window for jump dynamic
-%         tjump_offset = -.045;     % jump time offset
+%         tjump = .06;            % time window for jump dynamic
+%         tjump_offset = -.005;     % jump time offset
+%         1x SNR - always use this if dataset includes 1x SNR along with higher SNR jumps
+        tjump = .1;            % time window for jump dynamic
+        tjump_offset = -.045;     % jump time offset
     end
 elseif nmodes == 3
     tsample = 0.02;
@@ -217,9 +217,9 @@ for ji = 2:size(jumps_detected,1)-1
 
     peakstats = get_peak_stats(Fstats,tvect,t_above,t_below,tfin);  
     
-    % columns are: Fstatmax, time average of F stats relative to jump time, F stat FWHM
-    % standard deviation of F stat (for data above threshold)
-    % skewness of F stat, kurtosis of F stat
+    % columns are: Fstatmax; first 4 moments (time average of F stats relative ...
+    % standard deviation, skewness, kurtosis); std. dev and kurtosis
+    % normalized an alternate way; FWHM
     jump_stats = [jump_stats; peakstats];
     
     % Todo: use cells to improve flexbility
@@ -239,7 +239,7 @@ end
 
 %% Output chosen jumps
 % have user choose output file to avoid overwriting
-writematrix(jumps_detected,uiputfile());
-writematrix(jumps_measured,uiputfile());
-writematrix(jump_stats,uiputfile());
-writematrix(final_clusters,uiputfile());
+% writematrix(jumps_detected,uiputfile());
+% writematrix(jumps_measured,uiputfile());
+% writematrix(jump_stats,uiputfile());
+% writematrix(final_clusters,uiputfile());

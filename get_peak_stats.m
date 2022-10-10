@@ -39,11 +39,12 @@ function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,tfin)
     Fint_0 = trapz(tvect_i,Fstats_i);
     t_mean = trapz(tvect_i,tvect_i.*Fstats_i/Fint_0);
     t_mean_rel = t_mean - tvect(ti_end);
-    F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/max(Fstats_i));
-%     F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/Fint_0);   % performs a little worse
+    F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/Fint_0);  
     F_skew = trapz(tvect_i,(tvect_i-t_mean).^3.*Fstats_i/Fint_0)/F_var^1.5;
     F_kurt = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/Fint_0)/F_var^2;
+    F_var2 = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/max(Fstats_i));
+    F_kurt2 = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/max(Fstats_i));
 
-    peak_stats = [Fstatmax t_mean_rel tvect(t_fwhm+1) sqrt(F_var) F_skew F_kurt];
+    peak_stats = [Fstatmax t_mean_rel sqrt(F_var) F_skew F_kurt sqrt(F_var2) F_kurt2 tvect(t_fwhm+1)];
 end
 
