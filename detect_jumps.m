@@ -183,8 +183,11 @@ for ji = 2:size(jumps_detected,1)-1
     Fstatmax = jumps_detected(ji,7);
     twidth_curr = tvect(t_below-t_above+1);
 
+    % Jump filtering: remove short jumps
     if twidth_curr < tjump*2, continue; end
     
+    % Jump filtering: remove jumps too close together
+    % (interrupting each others' measurement windows)
     % TODO: revisit this!
     if t_curr < t_prev + tmeas + 2*tjump || ...
        t_next < t_curr + tmeas + 2*tjump, continue; end
@@ -210,13 +213,22 @@ for ji = 2:size(jumps_detected,1)-1
     rel_err = [sqrt(sigma_pool(1,1)) sqrt(sigma_pool(2,2))]./fvect(:,1)';
     err_rho = sigma_pool(1,2)/(sqrt(sigma_pool(1,1))*sqrt(sigma_pool(2,2)));
 
+    % Jump filtering: remove positive jumps
+    if rel_jump(1) > 0 || rel_jump(2) > 0, continue; end
+    if nmodes == 3
+        if rel_jump(3) > 0, continue; end
+    end
+
+    peakstats = get_peak_stats(Fstats,tvect,t_above,t_below,tfin);  
+
+%     % Jump filtering: remove low FWHM (optional manual cutoff)
+%     if peakstats(8) < .05, continue; end
+
     % columns are: time of jump (s), time of beginning of jump, time of end of jump,
     % time index of jump, relative jumps (df1, df2, df3, etc.), relative error.
     jumps_measured = [jumps_measured; t_curr t_begin t_end ...
                                       ti_curr rel_jump' rel_err err_rho];
 
-    peakstats = get_peak_stats(Fstats,tvect,t_above,t_below,tfin);  
-    
     % columns are: Fstatmax; first 4 moments (time average of F stats relative ...
     % standard deviation, skewness, kurtosis); std. dev and kurtosis
     % normalized an alternate way; FWHM
@@ -236,6 +248,13 @@ for ji = 2:size(jumps_detected,1)-1
     end
     Fstats_ts = [Fstats_ts; Fstats(all_range)'];
 end
+
+% Jump filtering: remove low FWHM (based on a percent of data)
+fwhm_sorted = sort(jump_stats(:,8));
+fwhm_thresh = fwhm_sorted(floor(.25*length(fwhm_sorted)));
+jump_above_fwhm_thresh = jump_stats(:,8) > fwhm_thresh;
+jumps_measured = jumps_measured(jump_above_fwhm_thresh,:);
+jump_stats = jump_stats(jump_above_fwhm_thresh,:);
 
 %% Output chosen jumps
 % have user choose output file to avoid overwriting
