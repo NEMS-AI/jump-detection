@@ -2,7 +2,7 @@
 desired_fraction = [.6 .4];
 
 % Specify range of epsilon values to sweep over
-eps_range = linspace(0.000,.1,1000);
+eps_range = linspace(0.000,2,1000);
 
 % Color used for various plots
 purple = [61 38 168]/255;   % purple
@@ -20,14 +20,28 @@ cmap = [blue;
 set(groot,'defaultAxesColorOrder',cmap)
 
 % X axis = Feature 1, Y Axis = Feature 2
-Feature1 = jump_stats(:,4); 
-Feature2 = jump_stats(:,3);
+Feature1 = jump_stats(:,1); 
+Feature2 = jump_stats(:,2);
+Feature3 = jump_stats(:,3);
+Feature4 = jump_stats(:,4);
+Feature5 = jump_stats(:,8);
 
-NormFeature1 =  (Feature1 - min(Feature1)) / ( max(Feature1) - min(Feature1) );
-NormFeature2 =  (Feature2 - min(Feature2)) / ( max(Feature2) - min(Feature2) );
+% NormFeature1 =  (Feature1 - min(Feature1)) / ( max(Feature1) - min(Feature1) );
+% NormFeature2 =  (Feature2 - min(Feature2)) / ( max(Feature2) - min(Feature2) );
+% NormFeature3 =  (Feature3 - min(Feature3)) / ( max(Feature3) - min(Feature3) );
+% NormFeature4 =  (Feature4 - min(Feature4)) / ( max(Feature4) - min(Feature4) );
+% NormFeature5 =  (Feature5 - min(Feature5)) / ( max(Feature5) - min(Feature5) );
+NormFeature1 =  Normalize(Feature1, 25, 75);
+NormFeature2 =  Normalize(Feature2, 25, 75);
+NormFeature3 =  Normalize(Feature3, 25, 75);
+NormFeature4 =  Normalize(Feature4, 25, 75);
+NormFeature5 =  Normalize(Feature5, 25, 75);
+
+
 
 % Choosing cluster features and get k-dist for each point
-X = [NormFeature1 NormFeature2];
+X = [NormFeature1, NormFeature2];
+
 [Idx,D] = knnsearch(X,X,'K',4);
 
 % Get clustering set for each choice of epsilon
@@ -148,5 +162,3 @@ plot(jumps_measured(final_clusters==2,5),jumps_measured(final_clusters==2,6),'.'
 xlabel('Relative frequency shift (Mode 1)');
 ylabel('Relative frequency shift (Mode 2)');
 % colormap(cmap)
-
-
