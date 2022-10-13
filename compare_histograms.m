@@ -34,7 +34,7 @@ for measured_event_i = 1:size(jumps_measured_100xsnr_var,1)
     real_count = 0;
     for real_event_i=1:length(real_times_100xsnr)
         real_event = real_times_100xsnr(real_event_i);
-        if lower_range-tmeas-tjump <= real_event && real_event <= upper_range+tmeas+tjump*2
+        if lower_range-tmeas-tjump <= real_event && real_event <= upper_range+tmeas+tjump
             real_count = real_count + 1;
             if real_count > 1
                 multi_jump_100xsnr_var(measured_event_i) = true;
