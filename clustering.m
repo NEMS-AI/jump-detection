@@ -20,10 +20,10 @@ cmap = [blue;
 set(groot,'defaultAxesColorOrder',cmap)
 
 % X axis = Feature 1, Y Axis = Feature 2
-Feature1 = jump_stats(:,1); 
-Feature2 = jump_stats(:,2);
-Feature3 = jump_stats(:,3);
-Feature4 = jump_stats(:,4);
+Feature1 = jump_stats(:,2); 
+Feature2 = jump_stats(:,3);
+Feature3 = jump_stats(:,4);
+Feature4 = jump_stats(:,5);
 Feature5 = jump_stats(:,8);
 
 % NormFeature1 =  (Feature1 - min(Feature1)) / ( max(Feature1) - min(Feature1) );
