@@ -27,12 +27,14 @@ legend('Variable event rate - single jumps','Variable event rate - multi jumps',
 %% Histogram Plotting
 
 figure;
-for moment_i = 1:4
-    subplot(2,2, moment_i)
-    h1=histogram(jump_stats_100xsnr_var(labels==2,moment_i),100); hold on
-    h2=histogram(jump_stats_100xsnr_var(labels==1,moment_i),100,'BinEdges',h1.BinEdges);
-    legend('Variable event rate - multi jumps','Variable event rate - single jumps');
-    pdist2(h1.BinCounts,h2.BinCounts)
+features = [2:5 8];
+for feature_i = 1:length(features)
+    subplot(1,5, feature_i)
+    h1=histogram(jump_stats_100xsnr_var(labels==2,features(feature_i)),50,'Normalization','probability'); hold on
+    h2=histogram(jump_stats_100xsnr_var(labels==1,features(feature_i)),50,'BinEdges',h1.BinEdges,'Normalization','probability');
+    title(['Feature ' num2str(feature_i)]);
+    if feature_i == 1, legend('Variable event rate - multi jumps','Variable event rate - single jumps'); end
+    pdist2(h1.BinCounts/sum(h1.BinCounts),h2.BinCounts/sum(h2.BinCounts))
 end
 % Plot of FWHM comparing multi-events to fixed rate-events
 % figure;
