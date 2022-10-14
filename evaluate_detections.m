@@ -1,17 +1,20 @@
 % Load in all the appropriate data
 % Assumes main function has been ran to collected detected jumps
-real_event_data = table2array(readtable("test_10xsnr_var_events.csv"));
+real_event_data = table2array(readtable("test_1xsnr_var_events.csv"));
 real_times = real_event_data(:,1);
+jumps_detected = jumps_detected_1xsnr_var;
+jumps_measured = jumps_measured_1xsnr_var;
+jump_stats = jump_stats_1xsnr_var;
 
-jumps_measured = table2array(readtable("10xSNR_measured.csv"));
-jumps_detected = table2array(readtable("10xSNR_detected.csv"));
-jump_stats = table2array(readtable("10xSNR_stats.csv"));
+% jumps_measured = table2array(readtable("10xSNR_measured.csv"));
+% jumps_detected = table2array(readtable("10xSNR_detected.csv"));
+% jump_stats = table2array(readtable("10xSNR_stats.csv"));
 
 %% Jump Detection Evaluation
 % Only evaluates our algorithms ability to detect any
 % regardless if they are single or multi-events
 
-labeling = LabelDetectedJumps(jumps_detected, real_times, tmeas, tjump);
+labels = LabelDetectedJumps(jumps_detected, real_times, tmeas, tjump);
 TP1 = length(jumps_detected(labeling >= 1));
 FP1 = length(jumps_detected(labeling == 0));
 FN1 = length(real_times) - TP1;
@@ -27,9 +30,9 @@ Fscore1 =(1+beta)^2*(precision1*recall1)/(beta^2*precision1+recall1);
 %% Jump Filtering Evaluation
 % Evaluates our algorithms ability to detect any event after pre-filtering
 % regardless if they are single or multi-events 
-labeling = LabelDetectedJumps(jumps_measured, real_times, tmeas, tjump);
-TP2 = length(jumps_measured(labeling >= 1));
-FP2 = length(jumps_measured(labeling == 0));
+labels = LabelDetectedJumps(jumps_measured, real_times, tmeas, tjump);
+TP2 = length(jumps_measured(labels >= 1));
+FP2 = length(jumps_measured(labels == 0));
 FN2 = length(real_times) - TP2;
 precision2 = TP2/(TP2+FP2);
 recall2 = TP2/(TP2+FN2);
@@ -45,6 +48,7 @@ Fscore2 =(1+beta)^2*(precision2*recall2)/(beta^2*precision2+recall2);
 % Note that Jump Stats and Jump Measures need to be defined at this point
 % jumps_measured = jumps_measured_100xsnr_var;
 % jump_stats = jump_stats_100xsnr_var;
+select_moments = [1, 3];
 clustering;
 % Running clusterin gshould define the final_clusters variable
 % used in next section
@@ -56,15 +60,17 @@ PostFilter = PostFiltering(jump_stats, 0);
 % TP: detected single-jump event that are in the final cluster
 % FP: Events in our final cluster that are either multi-event(label == 2)
 % or no-event(label == 0)
-TP3 = length(jumps_measured(final_clusters >= 1 & labels == 1 & PostFilter == 1));
-FP3 = length(jumps_measured(final_clusters >= 1 & labels ~= 1 & PostFilter == 1));
-
-% FN: real-events that we did not detect as single-jumps
-FN3 = length(real_times) - TP3;
-precision3 = TP/(TP+FP);
-recall3 = TP3/(TP3+FN3);
-
-% beta = 2 will bias toward recall
-% beta = 0.5 will bias precission
-beta = 0.5;
-Fscore =(1+beta)^2*(precision3*recall3)/(beta^2*precision3+recall3);
+for cluster_i = 0:2
+    TP3 = length(jumps_measured(final_clusters >= cluster_i & labels == 1 & PostFilter == 1));
+    FP3 = length(jumps_measured(final_clusters >= cluster_i & labels ~= 1 & PostFilter == 1));
+    
+    % FN: real-events that we did not detect as single-jumps
+    FN3 = length(real_times) - TP3;
+    precision3 = TP3/(TP3+FP3)
+    recall3 = TP3/(TP3+FN3);
+    
+    % beta = 2 will bias toward recall
+    % beta = 0.5 will bias precission
+    beta = 0.5;
+    Fscore =(1+beta)^2*(precision3*recall3)/(beta^2*precision3+recall3);
+end
