@@ -1,8 +1,8 @@
 % Specify the desired fraction of data set as 
-desired_fraction = [.6 .4];
+desired_fraction = [.6 .3];
 
 % Specify range of epsilon values to sweep over
-eps_range = linspace(0.000,2,1000);
+eps_range = linspace(0.000,1,1000);
 
 % Color used for various plots
 purple = [61 38 168]/255;   % purple
@@ -36,21 +36,22 @@ NormFeature2 =  Normalize(Feature2, 25, 75);
 NormFeature3 =  Normalize(Feature3, 25, 75);
 NormFeature4 =  Normalize(Feature4, 25, 75);
 NormFeature5 =  Normalize(Feature5, 25, 75);
-
+MomentFeatures = [NormFeature1, NormFeature2, NormFeature3, NormFeature4, NormFeature5];
 
 
 % Choosing cluster features and get k-dist for each point
-X = [NormFeature1, NormFeature2];
+% select_moments = [1,2];
+X = MomentFeatures(:,select_moments);
+MinPts = 2*size(X,2);
 
-[Idx,D] = knnsearch(X,X,'K',4);
-
+[Idx,D] = knnsearch(X,X,'K',MinPts);
 % Get clustering set for each choice of epsilon
 final_clusters = zeros(length(Idx),1);
 eps_num = zeros(length(eps_range),1);
 
 % Iterate over different choices of epsilon
 for eps = 1:length(eps_range)
-    idx = dbscan(X,eps_range(eps),4);
+    idx = dbscan(X,eps_range(eps),MinPts);
 
     % Determine clusters dbscan found
     unique_clusters = unique(idx);
@@ -115,7 +116,7 @@ cmap = [orange;
 final_clusters = zeros(length(Idx),1);
 % Iterate over different choices of epsilon
 for eps = 1:length(epsilon)
-    idx = dbscan(X,epsilon(eps),4);
+    idx = dbscan(X,epsilon(eps), MinPts);
 
 %   Find the biggest cluster for assignment
     [cnt_unique, unique_a] = hist(idx,unique(idx));
