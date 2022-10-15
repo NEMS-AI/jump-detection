@@ -15,8 +15,8 @@ jump_stats = jump_stats_1xsnr_var;
 % regardless if they are single or multi-events
 
 labels = LabelDetectedJumps(jumps_detected, real_times, tmeas, tjump);
-TP1 = length(jumps_detected(labeling >= 1));
-FP1 = length(jumps_detected(labeling == 0));
+TP1 = length(jumps_detected(labels >= 1));
+FP1 = length(jumps_detected(labels == 0));
 FN1 = length(real_times) - TP1;
 precision1 = TP1/(TP1+FP1);
 recall1 = TP1/(TP1+FN1);
@@ -48,7 +48,7 @@ Fscore2 =(1+beta)^2*(precision2*recall2)/(beta^2*precision2+recall2);
 % Note that Jump Stats and Jump Measures need to be defined at this point
 % jumps_measured = jumps_measured_100xsnr_var;
 % jump_stats = jump_stats_100xsnr_var;
-select_moments = [1, 3];
+select_moments = [1,2,3,4,5];
 clustering;
 % Running clusterin gshould define the final_clusters variable
 % used in next section
