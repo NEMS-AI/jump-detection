@@ -1,8 +1,8 @@
+function final_clusters = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments)
 % Specify the desired fraction of data set as 
-desired_fraction = [.6 .3];
-
+% desired_fraction = [.6 .3];
 % Specify range of epsilon values to sweep over
-eps_range = linspace(0.000,1,1000);
+% eps_range = linspace(0.000,1,1000);
 
 % Color used for various plots
 purple = [61 38 168]/255;   % purple
@@ -44,65 +44,68 @@ MomentFeatures = [NormFeature1, NormFeature2, NormFeature3, NormFeature4, NormFe
 X = MomentFeatures(:,select_moments);
 MinPts = 2*size(X,2);
 
-[Idx,D] = knnsearch(X,X,'K',MinPts);
+[MinPtsNN,PairwiseDistances] = knnsearch(X,X,'K',MinPts);
 % Get clustering set for each choice of epsilon
-final_clusters = zeros(length(Idx),1);
-eps_num = zeros(length(eps_range),1);
+% For each value in eps_range, store associated percent of data
+eps_percent = zeros(length(eps_range),1);
 
 % Iterate over different choices of epsilon
 for eps = 1:length(eps_range)
-    idx = dbscan(X,eps_range(eps),MinPts);
-
+    % Report the eps' set of clustering
+    clusters_found = dbscan(X,eps_range(eps),MinPts);
+    
     % Determine clusters dbscan found
-    unique_clusters = unique(idx);
+    unique_clusters = unique(clusters_found);
    
     % Exclude the the case in which the only cluster is the noise-cluster
+    % and case where values are in one cluster
     if unique_clusters(end) == -1
-        eps_num(eps) = 0;
-
+        eps_percent(eps) = 0;
+    elseif length(unique_clusters) == 1
+        eps_percent(eps) = 100;
     else
         % Count clusters and find largest cluster
-        [cnt_unique, unique_a] = hist(idx,unique_clusters);
+        [cnt_unique, unique_a] = hist(clusters_found,unique_clusters);
         [M,I] = max(cnt_unique);
         
         % If the largest cluster is noise-cluster,
         % find second largest cluster
         if I == 1
-            eps_num(eps) = max(cnt_unique(cnt_unique<max(cnt_unique)));
+            eps_percent(eps) = max(cnt_unique(cnt_unique<max(cnt_unique)))/length(jump_stats);
   
         else
-            eps_num(eps) = M;
+            eps_percent(eps) = M/length(jump_stats);
         end
     end
    
 end
 
 figure;
-scatter(eps_range,eps_num/eps_num(end), "filled")
+scatter(eps_range,eps_percent, "filled")
 set(gca, 'XScale', 'log');
 ylabel('Fraction of points in largest cluster');
 xlabel('Distance (\epsilon)');
 
-epsilon = zeros(size(desired_fraction));
-pts = zeros(size(desired_fraction));
+final_epsilons = zeros(size(desired_fraction));
+final_fracs = zeros(size(desired_fraction));
 
-for di = 1:length(desired_fraction)
+for frac_i = 1:length(desired_fraction)
 
     % Initialize parameters for epsilon search
-    final_eps = eps_range(1);
-    final_frac = eps_num(1)/eps_num(end);
+    eps_search = eps_range(1);
+    frac_search = eps_percent(1);
     
     % Search through eps_num to find point near desired fraction
-    for i = 1:length(eps_num)
+    for i = 1:length(eps_percent)
         % If closer fraction is found, update final values
-        if eps_num(i)/eps_num(end) < desired_fraction(di)
-            final_frac = eps_num(i)/eps_num(end);
-            final_eps = eps_range(i);
+        if eps_percent(i) < desired_fraction(frac_i)
+            frac_search = eps_percent(i);
+            eps_search = eps_range(i);
         end
     end
     
-    epsilon(di) = final_eps;
-    pts(di) = final_frac;
+    final_epsilons(frac_i) = eps_search;
+    final_fracs(frac_i) = frac_search;
 end
 
 cmap = [orange;
@@ -113,7 +116,7 @@ cmap = [orange;
 % Recolor plots based on multiple eps options
 
 % Get clustering set for each choice of epsilon
-final_clusters = zeros(length(Idx),1);
+final_clusters = zeros(length(jump_stats),1);
 % Iterate over different choices of epsilon
 for eps = 1:length(epsilon)
     idx = dbscan(X,epsilon(eps), MinPts);
