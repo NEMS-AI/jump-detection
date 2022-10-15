@@ -1,4 +1,4 @@
-function [final_clusters, final_epsilons, final_fracs] = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments)
+function [final_clusters, final_epsilons, final_fracs] = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_features)
 % Specify the desired fraction of data set as 
 % desired_fraction = [.6 .3];
 % Specify range of epsilon values to sweep over
@@ -36,12 +36,11 @@ NormFeature2 =  Normalize(Feature2, 25, 75);
 NormFeature3 =  Normalize(Feature3, 25, 75);
 NormFeature4 =  Normalize(Feature4, 25, 75);
 NormFeature5 =  Normalize(Feature5, 25, 75);
-MomentFeatures = [NormFeature1, NormFeature2, NormFeature3, NormFeature4, NormFeature5];
+SelectedFeatures = [NormFeature1, NormFeature2, NormFeature3, NormFeature4, NormFeature5];
 
 
 % Choosing cluster features and get k-dist for each point
-% select_moments = [1,2];
-X = MomentFeatures(:,select_moments);
+X = SelectedFeatures(:,select_features);
 MinPts = 2*size(X,2);
 
 % Alternate approach to find epsilon is knn serach 

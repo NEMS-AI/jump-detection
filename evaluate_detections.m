@@ -1,10 +1,10 @@
 % Load in all the appropriate data
 % Assumes main function has been ran to collected detected jumps
-real_event_data = table2array(readtable("test_10xsnr_var_events.csv"));
+real_event_data = table2array(readtable("test_1xsnr_var_events.csv"));
 real_times = real_event_data(:,1);
-jumps_detected = jumps_detected_10xsnr_var;
-jumps_measured = jumps_measured_10xsnr_var;
-jump_stats = jump_stats_10xsnr_var;
+jumps_detected = jumps_detected_1xsnr_var;
+jumps_measured = jumps_measured_1xsnr_var;
+jump_stats = jump_stats_1xsnr_var;
 
 % jumps_measured = table2array(readtable("10xSNR_measured.csv"));
 % jumps_detected = table2array(readtable("10xSNR_detected.csv"));
@@ -48,11 +48,11 @@ Fscore2 =(1+beta)^2*(precision2*recall2)/(beta^2*precision2+recall2);
 % Note that Jump Stats and Jump Measures need to be defined at this point
 % jumps_measured = jumps_measured_100xsnr_var;
 % jump_stats = jump_stats_100xsnr_var;
-select_moments = [1,2,3,4,5];
-desired_fraction = [.35];
+select_features = [1,2,3,4,5];
+desired_fraction = [.3];
 eps_range = linspace(0.000,1,1000);
 
-[final_clusters, final_epsilons, final_fracs]  = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments);
+[final_clusters, final_epsilons, final_fracs]  = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_features);
 % Running clusterin gshould define the final_clusters variable
 % used in next section
 PostFilter = PostFiltering(jump_stats, 0);
