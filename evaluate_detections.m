@@ -52,7 +52,7 @@ select_moments = [1,2,3,4,5];
 desired_fraction = [.35];
 eps_range = linspace(0.000,1,1000);
 
-final_clusters = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments);
+[final_clusters, final_epsilons, final_fracs]  = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments);
 % Running clusterin gshould define the final_clusters variable
 % used in next section
 PostFilter = PostFiltering(jump_stats, 0);

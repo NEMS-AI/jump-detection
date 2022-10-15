@@ -1,4 +1,4 @@
-function final_clusters = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments)
+function [final_clusters, final_epsilons, final_fracs] = clustering(jump_stats, jumps_measured, desired_fraction, eps_range, select_moments)
 % Specify the desired fraction of data set as 
 % desired_fraction = [.6 .3];
 % Specify range of epsilon values to sweep over
@@ -44,7 +44,10 @@ MomentFeatures = [NormFeature1, NormFeature2, NormFeature3, NormFeature4, NormFe
 X = MomentFeatures(:,select_moments);
 MinPts = 2*size(X,2);
 
-[MinPtsNN,PairwiseDistances] = knnsearch(X,X,'K',MinPts);
+% Alternate approach to find epsilon is knn serach 
+% and look for knee point for MinPts' nearest neighbors
+% [MinPtsNN,PairwiseDistances] = knnsearch(X,X,'K',MinPts);
+
 % Get clustering set for each choice of epsilon
 % For each value in eps_range, store associated percent of data
 eps_percent = zeros(length(eps_range),1);
@@ -54,10 +57,10 @@ for eps = 1:length(eps_range)
     % Report the eps' set of clustering
     clusters_found = dbscan(X,eps_range(eps),MinPts);
     
-    % Determine clusters dbscan found
+    % Determine unique clusters found
     unique_clusters = unique(clusters_found);
    
-    % Exclude the the case in which the only cluster is the noise-cluster
+    % Exclude the case in which the only cluster is the noise-cluster
     % and case where values are in one cluster
     if unique_clusters(end) == -1
         eps_percent(eps) = 0;
@@ -65,18 +68,22 @@ for eps = 1:length(eps_range)
         eps_percent(eps) = 100;
     else
         % Count clusters and find largest cluster
-        [cnt_unique, unique_a] = hist(clusters_found,unique_clusters);
-        [M,I] = max(cnt_unique);
+        [cluster_sizes, ~] = hist(clusters_found,unique_clusters);
+        [max_size,max_idx] = max(cluster_sizes);
         
         % If the largest cluster is noise-cluster,
         % find second largest cluster
-        if I == 1
-            eps_percent(eps) = max(cnt_unique(cnt_unique<max(cnt_unique)))/length(jump_stats);
+        if max_idx == 1
+            
+            cluster_sizes = sort(cluster_sizes, 'descend');
+            max2_size = cluster_sizes(2);
+            eps_percent(eps) = max2_size/length(jump_stats);
   
         else
-            eps_percent(eps) = M/length(jump_stats);
+            eps_percent(eps) = max_size/length(jump_stats);
         end
     end
+
    
 end
 
@@ -118,24 +125,27 @@ cmap = [orange;
 % Get clustering set for each choice of epsilon
 final_clusters = zeros(length(jump_stats),1);
 % Iterate over different choices of epsilon
-for eps = 1:length(epsilon)
-    idx = dbscan(X,epsilon(eps), MinPts);
+for eps_i = 1:length(final_epsilons)
+    cluster_i = dbscan(X,final_epsilons(eps_i), MinPts);
 
 %   Find the biggest cluster for assignment
-    [cnt_unique, unique_a] = hist(idx,unique(idx));
-    [M,I] = max(cnt_unique);
-    [M2,I2] = max(cnt_unique(cnt_unique<max(cnt_unique)));
-    
-    if unique_a(end) == -1
-        continue;
+    [cnt_unique, unique_values] = hist(cluster_i,unique(cluster_i));
+    % Find biggest cluster
+    [~,max_idx] = max(cnt_unique);
+
+    % If noise the biggest cluster, find second biggest cluster
+    if max_idx == 1
+        [~,max2_idx] = max(cnt_unique(2:end));
+        cluster_label = unique_values(max2_idx+1);
+    else 
+        
+        cluster_label = unique_values(max_idx);
     end
-    for i = 1:length(idx)
-        if I == 1
-            if idx(i) == unique_a(I2+1)
-                final_clusters(i) = eps;
-            end
-        elseif idx(i) == unique_a(I)
-            final_clusters(i) = eps;
+    
+    
+    for i = 1:length(jump_stats)
+        if cluster_i(i) == cluster_label
+            final_clusters(i) = eps_i;
         end
     end
 end
