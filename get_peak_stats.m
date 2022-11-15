@@ -1,28 +1,23 @@
-function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,ti3,ti4,ti5,tfin)
+function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,tfin)
 %get_peak_stats summarize various statistics related to Fstat peak.
 % Fstats input is the variable over entire dataset
 % tvect is similarly time vector over entire dataset
-% ti1: time index of beginning of pre-jump measurement window
-% ti2: time index of end of pre-jump measurement window (unused right now)
-% ti3: time index of end of post-jump measurement window
-% ti4: time index of Fstats crossing above threshold
-% ti5: time index of Fstats crossing back below threshold
+% ti1: time index of Fstats crossing above threshold
+% ti2: time index of Fstats crossing back below threshold
 % tfin: time index of end of dataset (TODO: not needed?)
-% Fstat is above threshold between ti4 and ti5.
 
-    Fstatmax = max(Fstats(ti1:ti5));
-    ti_Fstatmax = find(Fstats(ti1:ti5)==Fstatmax)+ti1-1;
+    ti_start = ti1;
+    ti_end = ti2;
+
+    Fstatmax = max(Fstats(ti_start:ti_end));
+    ti_Fstatmax = find(Fstats(ti_start:ti_end)==Fstatmax)+ti_start-1;
     
     % find time and F stat vector from start of first jump window to
     % time of jump
-    tvect_i = tvect(ti1:ti5);
-%     Fstats_i = Fstats(ti1:ti3)/max(Fstats(ti1:ti3)); % normalize
-    Fstats_i = log10(Fstats(ti1:ti5)); % take log
-    
-%     peaks_right = 0; % flag if F stat goes significantly above threshold in post-jump window; not used
-%     tvect_right = tvect(ti5+1:ti3); % time and F stats vector after jump time
-%     Fstats_right = log10(Fstats(ti5+1:ti3));
-%     if sum(Fstats_right > Fstats_i(end)*1.25) > 0, peaks_right = 1; end
+    tvect_i = tvect(ti_start:ti_end);
+    Fstats_i = log10(Fstats(ti_start:ti_end)); % take log
+%     alternative normalization
+%     Fstats_i = Fstats(ti_start:ti_end)/max(Fstats(ti_start:ti_end));
     
     %  find FWHM 
     peak_left_i = ti_Fstatmax;
@@ -36,23 +31,20 @@ function peak_stats = get_peak_stats(Fstats,tvect,ti1,ti2,ti3,ti4,ti5,tfin)
     t_fwhm = peak_right_i - peak_left_i;
     
     % find time above threshold for primary peak
-    peak_left_i = ti_Fstatmax;
-    while Fstats(peak_left_i) > Fstats(ti5) && peak_left_i > ti1
-        peak_left_i = peak_left_i - 1;
-    end
-    t_above_thresh = ti5 - peak_left_i;
+    t_above_thresh = 0;
     
     % normalize Fstats and collect statistics
     Fstats_i = max(Fstats_i,Fstats_i(end));
     Fstats_i = Fstats_i-Fstats_i(end);
     Fint_0 = trapz(tvect_i,Fstats_i);
     t_mean = trapz(tvect_i,tvect_i.*Fstats_i/Fint_0);
-    t_mean_rel = t_mean - tvect(ti5);
-    F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/Fint_0);
+    t_mean_rel = t_mean - tvect(ti_end);
+    F_var = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/Fint_0);  
     F_skew = trapz(tvect_i,(tvect_i-t_mean).^3.*Fstats_i/Fint_0)/F_var^1.5;
     F_kurt = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/Fint_0)/F_var^2;
+    F_var2 = trapz(tvect_i,(tvect_i-t_mean).^2.*Fstats_i/max(Fstats_i));
+    F_kurt2 = trapz(tvect_i,(tvect_i-t_mean).^4.*Fstats_i/max(Fstats_i));
 
-    t_bif = 0; % time spent above bifurcation point (not used)
-    peak_stats = [Fstatmax t_mean_rel tvect(t_fwhm+1) tvect(t_bif+1) tvect(t_above_thresh+1) sqrt(F_var) F_skew F_kurt];
+    peak_stats = [Fstatmax t_mean_rel sqrt(F_var) F_skew F_kurt sqrt(F_var2) F_kurt2 tvect(t_fwhm+1)];
 end
 

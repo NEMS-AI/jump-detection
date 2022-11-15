@@ -20,10 +20,11 @@ function plot_jump(nmodes,tvect,rel_jump_ts,Fstats,Fstat_med,tmeas,tjump,tjump_o
             plot(tvect-tmeas+tjump_offset,Fstat_med/max(Fstat_med));
         end
     else
-        plot(tvect-tmeas+tjump_offset,Fstats);
+%         plot(tvect-tmeas+tjump_offset,Fstats,'Color',[0 114 189]/255);
         if plotmedian
-            plot(tvect-tmeas+tjump_offset,Fstat_med);
+            plot(tvect-tmeas+tjump_offset,Fstat_med,'Color',[0 114 189]/255);
         end
+        set(gca,'YColor',[0 114 189]/255);
     end
     ylabel('log(F statistic)');
 %     ylabel('log(F statistic) (Normalized)');
@@ -31,7 +32,9 @@ function plot_jump(nmodes,tvect,rel_jump_ts,Fstats,Fstat_med,tmeas,tjump,tjump_o
     ylim([ylims(1) ylims(2)*1.05]);
     ylims = ylim;
     xlims = xlim;
-    rectangle('Position',[tjump_offset ylims(1) tjump ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.1],'EdgeColor',[1 0 0 0]);
+    rectangle('Position',[-tmeas+tjump_offset ylims(1) tmeas ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.2],'EdgeColor',[1 0 0 0]);
+    rectangle('Position',[tjump+tjump_offset ylims(1) tmeas ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.1],'EdgeColor',[1 0 0 0]);
+%     rectangle('Position',[tjump_offset ylims(1) tjump ylims(2)-ylims(1)],'FaceColor', [1 0 0 0.1],'EdgeColor',[1 0 0 0]);
     plot((-tmeas+tjump_offset)*[1 1],ylim,'-','Color',[1 0 0 .8]);
     plot((tjump_offset)*[1 1],ylim,'-','Color',[1 0 0 .8]);
     plot((tjump+tjump_offset)*[1 1],ylim,'-','Color',[1 0 0 .8]);
