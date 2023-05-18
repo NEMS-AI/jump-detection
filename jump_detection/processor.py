@@ -58,13 +58,14 @@ class TimeSeriesProcessor:
         list of Segment
             The time series and Fstat segments associated with each peak.
         """
-        data = self.load_data(filename)
-        moving_avg = rolling_F_statistic(data.values, self.window_size, self.window_size, self.gap_size)
-        peaks = find_peaks_in_data(moving_avg)
+        data = self.load_data(filename).values
+        moving_fstat = rolling_F_statistic(data, self.window_size, self.window_size, self.gap_size)
+        peaks = find_peaks_in_data(moving_fstat)
+
+        # Segment out 
         original_segments = segment_data(self.window_size, peaks, data)
-        average_segments = segment_data(self.window_size, peaks,  data)
-        # avg_segments = segment_data(peaks, moving_avg, self.window_size)
+        fstat_segments = segment_data(self.window_size, peaks,  moving_fstat)
         
-        segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, average_segments)]
+        segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
         return segments
 

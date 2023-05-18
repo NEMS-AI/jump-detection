@@ -61,7 +61,7 @@ def segment_data(window_size, peaks, data):
     for peak in peaks:
         start = max(0, peak - window_size)
         end = min(len(data), peak + window_size)
-        segments.append(data.iloc[start:end])
+        segments.append(data[start:end])
     return segments
 
 # ------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ def compute_fwhm(values):
 
     return fwhm
 
-def get_peak_stats(df):
+def get_peak_stats(data):
     """
     Description of method.
 
@@ -106,10 +106,10 @@ def get_peak_stats(df):
     # TODO: Check FWHM Code
     # FWHM = compute_fwhm(df['FStat'])
     FWHM = 0
-    M1 = np.mean(df['FStat'])
-    M2 = np.var(df['FStat'])
-    M3 = skew(df['FStat'])
-    M4 = kurtosis(df['FStat'])
+    M1 = np.mean(data)
+    M2 = np.var(data)
+    M3 = skew(data)
+    M4 = kurtosis(data)
     return ((FWHM, M1, M2, M3, M4))
 
 

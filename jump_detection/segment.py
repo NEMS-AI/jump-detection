@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from .utils import *
 class Segment:
     """
     Class representing a time series segment associated with a peak.
@@ -26,3 +26,7 @@ class Segment:
         """
         self.original = original
         self.Fstats = Fstats
+        self.features = []
+
+    def calculate_features(self):
+        self.features = get_peak_stats(self.Fstats)
