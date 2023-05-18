@@ -29,4 +29,12 @@ class Segment:
         self.features = []
 
     def calculate_features(self):
+        """
+        Calculate set of reduced features and store
+
+        Parameters:
+        -----------
+        parameter1 : type
+            Desired p-value for bootstrap calculation.
+        """
         self.features = get_peak_features(self.Fstats)
