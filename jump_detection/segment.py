@@ -29,4 +29,4 @@ class Segment:
         self.features = []
 
     def calculate_features(self):
-        self.features = get_peak_stats(self.Fstats)
+        self.features = get_peak_features(self.Fstats)

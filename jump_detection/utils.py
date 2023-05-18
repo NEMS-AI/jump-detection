@@ -71,41 +71,44 @@ def segment_data(window_size, peaks, data):
 
 def compute_fwhm(values):
     """
-    Description of method.
+    A helper method designed to calculate the full width at half maximum (FWHM).
 
     Parameters:
     -----------
     parameter1 : type
-        Description of parameter
+        The 1D array whose FWHM will be calculated.
     """
     # Compute the maximum value and its index
     max_value = np.max(values)
     max_index = np.argmax(values)
 
     # Compute the half maximum value
-    half_max_value = max_value / 2
+    half_max = max_value / 2
 
-    # Find the indices where the values cross the half maximum value
-    left_index = np.argmin(np.abs(values[:max_index] - half_max_value))
-    right_index = max_index + np.argmin(np.abs(values[max_index:] - half_max_value))
+    # Find the indices where the values is above the half maximum
+    above_half_max = np.where(values > half_max)[0]
 
-    # Compute the FWHM
-    fwhm = right_index - left_index
+    # Find the indices of the first and last points above half maximum
+    first_index = above_half_max[0]
+    last_index = above_half_max[-1]
+
+    # Calculate the FWHM
+    fwhm = last_index - first_index
 
     return fwhm
 
-def get_peak_stats(data):
+def get_peak_features(data):
     """
-    Description of method.
+    Given a 1D array, this method will compute various summary features that are 
+    used to reduce the dimensionality of the array.
 
     Parameters:
     -----------
-    parameter1 : type
-        Description of parameter
+    value : type
+        The 1D array whose FWHM will be calculated.
     """
     # TODO: Check FWHM Code
-    # FWHM = compute_fwhm(df['FStat'])
-    FWHM = 0
+    FWHM = compute_fwhm(data)
     M1 = np.mean(data)
     M2 = np.var(data)
     M3 = skew(data)
@@ -113,7 +116,7 @@ def get_peak_stats(data):
     return ((FWHM, M1, M2, M3, M4))
 
 
-def normalize_features(df, features):
+def normalize_features(features):
     """
     Description of method.
 
@@ -122,10 +125,7 @@ def normalize_features(df, features):
     parameter1 : type
         Description of parameter
     """
-
-    features = ['M1', 'M2', 'M3']
-    subset = df[features]
-    normalized = (subset - subset.mean()) / subset.std()
+    normalized = (features - features.mean(axis = 0)) / features.std(axis = 0)
     return normalized
 
 def get_eps(normalized):
