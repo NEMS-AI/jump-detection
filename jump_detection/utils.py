@@ -130,7 +130,7 @@ def normalize_features(features):
 
 def get_eps(normalized):
     """
-    From a normalized df, compute use knee point to determine eps
+    From a normalized np array, compute use knee point to determine eps
 
     Parameters:
     -----------
@@ -166,7 +166,7 @@ def get_class_labels(normalized, eps):
     
     """
     eps = eps  
-    dbscan = DBSCAN(eps=eps, min_samples=normalized.shape[1])
+    dbscan = DBSCAN(eps = eps, min_samples = 2 * normalized.shape[1])
     dbscan.fit(normalized)
 
     return(dbscan.labels_)

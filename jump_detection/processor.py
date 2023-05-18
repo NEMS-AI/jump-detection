@@ -68,4 +68,4 @@ class TimeSeriesProcessor:
         
         segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
         return segments
-
+    
