@@ -40,11 +40,11 @@ class TimeSeriesProcessor:
         pd.DataFrame
             The loaded data.
         """
-        self.data = pd.read_csv(filename)
+        self.data = pd.read_csv(filename).values
         return self.data
 
 
-    def process_data(self, filename = None):
+    def process_data(self):
         """
         Process the time series data, creating segments around the peaks.
 
@@ -58,12 +58,11 @@ class TimeSeriesProcessor:
         list of Segment
             The time series and Fstat segments associated with each peak.
         """
-        data = self.load_data(filename).values
-        moving_fstat = rolling_F_statistic(data, self.window_size, self.window_size, self.gap_size)
+        moving_fstat = rolling_F_statistic(self.data, self.window_size, self.window_size, self.gap_size)
         peaks = find_peaks_in_data(moving_fstat)
-
+        self.moving_fstats = moving_fstat
         # Segment out 
-        original_segments = segment_data(self.window_size, peaks, data)
+        original_segments = segment_data(self.window_size, peaks, self.data)
         fstat_segments = segment_data(self.window_size, peaks,  moving_fstat)
         
         segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]

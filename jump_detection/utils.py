@@ -7,8 +7,6 @@ from scipy.stats import mode
 from kneed import DataGenerator, KneeLocator
 from scipy.signal import find_peaks
 
-
-
 # ------------------------------------------------------------------------------
 # Methods for Step 1: Identify all jump events
 # ------------------------------------------------------------------------------
@@ -45,7 +43,7 @@ def find_peaks_in_data(data):
 
     #TODO Update peakinding to match matlab implementation
     """
-    peaks, _ = find_peaks(data, prominence=0.01)
+    peaks, _ = find_peaks(data, prominence=100)
     return peaks
 
 def segment_data(window_size, peaks, data):
