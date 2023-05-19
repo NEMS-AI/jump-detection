@@ -175,3 +175,39 @@ def get_class_labels(normalized, eps):
 # Methods for Step 3: Measure Events
 # ------------------------------------------------------------------------------
 
+def normalize_jump(timeseries, a, b):
+    """
+    Helper function designed to normalize a time series segment
+
+     Parameters:
+    -----------
+    parameter1 : type
+        Description of parameter
+    """
+    #TODO: Check normalization scheme
+
+    # To get values between a and b:
+    # Normalize Y = a + (X - X_min) * (b - a) / (X_max - X_min)
+    array_min = timeseries.min(axis=0)
+    array_max = timeseries.max(axis=0)
+    normalized_array = a + ((timeseries - array_min) * (b - a)) / (array_max - array_min)
+    return normalized_array
+
+def calculate_median_jump(segment_list):
+    """
+    Normalizes all jumps and calculates the median jump for each mode
+
+    Parameters:
+    -----------
+    parameter1 : type
+        Description of parameter
+    """
+    # TODO Perform this operation quicker
+    jump_shape = segment_list[int(len(segment_list)/2)].original.shape
+
+    segment_arr = np.array([normalize_jump(segment.original, 0, 1) for segment in segment_list if segment.original.shape == jump_shape])
+    median_jump = np.median(segment_arr, axis=0)
+
+    
+    return median_jump
+

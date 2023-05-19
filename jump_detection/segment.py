@@ -27,6 +27,7 @@ class Segment:
         self.original = original
         self.Fstats = Fstats
         self.features = []
+        self.diff = 0
 
     def calculate_features(self):
         """
@@ -35,6 +36,18 @@ class Segment:
         Parameters:
         -----------
         parameter1 : type
-            Desired p-value for bootstrap calculation.
         """
         self.features = get_peak_features(self.Fstats)
+
+    def calculate_freq_shift(self, window_size):
+        """
+        For a single segment, calculate corresonding relative frequency shift
+
+        Parameters:
+        -----------
+        parameter1 : type
+        """
+        x1 = np.mean(self.original[0:window_size], axis = 0)
+        x2 = np.mean(self.original[-window_size :], axis = 0)
+        self.diff = (x2 - x1) / x1
+        pass
