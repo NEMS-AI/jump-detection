@@ -112,7 +112,7 @@ def cast_to_matrix(X):
 
 def rolling_F_statistic_slow(X_samples, n1, n2, g):
     X_samples = cast_to_matrix(X_samples)
-    N, d = X_samples.shape 
+    N, d = X_samples.shape
     N_f_stats = N - n1 - n2 - g + 1
   
     f_stats = np.zeros(N_f_stats)
@@ -163,6 +163,27 @@ def _expectation_sq(X):
     exp_sq /= n - 1
     return exp_sq
 
+@njit #('float64[:](float64[:])')
+def _normalise_array(X):
+    """Return shifted and normalised"""
+    N, d = X.shape
+    # Compute mean
+    mu = np.zeros(d)
+    for i in range(N):
+        mu += X[i]
+    mu /= N
+    
+    # Shift array
+    X_shift = X - mu
+    
+    sigma = np.zeros(d)
+    for i in range(N):
+        sigma += X_shift[i] ** 2
+    sigma /= N
+    
+    X_normalised = X_shift / sigma
+    return X_normalised
+
 
 @njit #('(float64[:, :], int64, int64, int64)')
 def rolling_F_statistic(X_samples, n1, n2, g):
@@ -209,12 +230,15 @@ def rolling_F_statistic(X_samples, n1, n2, g):
     """
     N, d = X_samples.shape
     C = (n1 + n2 - d - 1) / (d * (n1 + n2 - 2)) * n1 * n2 / (n1 + n2)
-    
     N_f_stats = N - n1 - n2 - g + 1
     
+    # Shift and renormalise data - to avoid accumulation of floating
+    # point rounding error
+    X_ns = _normalise_array(X_samples)
+    
     # Initialise Window means and square expectation
-    W1_init = X_samples[:n1, :]
-    W2_init = X_samples[n1 + g:n1 + n2 + g, :]
+    W1_init = X_ns[:n1, :]
+    W2_init = X_ns[n1 + g:n1 + n2 + g, :]
     
     W1_bar = np.sum(W1_init, axis=0) / n1
     W2_bar = np.sum(W2_init, axis=0) / n2
@@ -222,20 +246,21 @@ def rolling_F_statistic(X_samples, n1, n2, g):
     W1_sq = _expectation_sq(W1_init)
     W2_sq = _expectation_sq(W2_init)
     
-    
     # Compute rolling filters
     f_stats = np.zeros(N_f_stats)
     f_stats[0] = C * _F_stat(d, n1, n2, W1_bar, W2_bar, W1_sq, W2_sq)
     
     for i in range(0, N_f_stats - 1):
-        W1_bar += (X_samples[i + n1] - X_samples[i]) / n1
-        W2_bar += (X_samples[i + n1 + n2 + g] - X_samples[i + n1 + g]) / n2
+        W1_bar += (X_ns[i + n1] - X_ns[i]) / n1
+        W2_bar += (X_ns[i + n1 + n2 + g] - X_ns[i + n1 + g]) / n2
 
-        W1_sq += (self_outer(X_samples[i + n1]) - self_outer(X_samples[i])) / (n1 - 1)
+        W1_sq += (
+            self_outer(X_ns[i + n1]) - self_outer(X_ns[i])
+        ) / (n1 - 1)
         W2_sq += (
-            self_outer(X_samples[i + n1 + n2 + g]) - self_outer(X_samples[i + n1 + g])
+            self_outer(X_ns[i + n1 + n2 + g]) - self_outer(X_ns[i + n1 + g])
         ) / (n2 - 1)
-        
+
         f_stats[i + 1] = C * _F_stat(d, n1, n2, W1_bar, W2_bar, W1_sq, W2_sq)
         
     return f_stats
@@ -248,7 +273,7 @@ def rolling_F_statistic(X_samples, n1, n2, g):
 # allow control over memory allocation in the main loop.
 #
 # The code above does not take advantage of the symmetry of the square expectation
-# and covariance matrices. This could have the numbe of multiplications in the
+# and covariance matrices. This could have the number of multiplications in the
 # main loop.
 # ------------------------------------------------------------------------------
 
