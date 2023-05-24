@@ -32,24 +32,32 @@ def calculate_moving_average(data, window_size):
     return moving_avg
 
 
-def find_peaks_in_data(data):
+def find_peaks_in_data(data, height = 300):
     """
-    Description of method.
+    Given a 1D array, find all local maxima. 
 
     Parameters:
     -----------
     parameter1 : type
         Description of parameter
+    height : int
+        The vertical threshold for which points are considered to be peaks
 
-    #TODO Update peakinding to match matlab implementation
+    #TODO Update peak finding to match matlab implementation
     """
-    peaks, _ = find_peaks(data, height=300)
+    peaks, _ = find_peaks(data, height=height)
     return peaks
 
-def segment_data(window_size, peaks, data):
+def segment_data(window_size, gap_size, peaks, data):
     """
-    Description of method.
+    For each peak passed through, capture a window around the peak. The following 
+    is a rough sketch of what is stored as a segment
 
+            Window 1            Gap              Window 2     
+        [ ----- n1 ----- ) [ ----- g -----) [ ------ n2 -------)
+        |                |                  |                  |
+        peak-window-gap/2          peak                 peak + window + gap/2
+    
     Parameters:
     -----------
     parameter1 : type
@@ -57,8 +65,8 @@ def segment_data(window_size, peaks, data):
     """
     segments = []
     for peak in peaks:
-        start = max(0, peak - window_size)
-        end = min(len(data), peak + window_size)
+        start = max(0, int(peak - window_size - gap_size/2))
+        end = min(len(data), int(peak + window_size + gap_size/2))
         segments.append(data[start:end])
     return segments
 
