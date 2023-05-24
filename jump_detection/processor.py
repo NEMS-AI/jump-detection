@@ -62,8 +62,8 @@ class TimeSeriesProcessor:
         peaks = find_peaks_in_data(moving_fstat)
         self.moving_fstats = moving_fstat
         # Segment out 
-        original_segments = segment_data(self.window_size, peaks, self.data)
-        fstat_segments = segment_data(self.window_size, peaks,  moving_fstat)
+        original_segments = segment_data(self.window_size, self.gap_size,peaks, self.data)
+        fstat_segments = segment_data(self.window_size,self.gap_size, peaks,  moving_fstat)
         
         segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
         return segments
