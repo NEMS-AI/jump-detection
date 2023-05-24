@@ -43,7 +43,7 @@ def find_peaks_in_data(data):
 
     #TODO Update peakinding to match matlab implementation
     """
-    peaks, _ = find_peaks(data, prominence=100)
+    peaks, _ = find_peaks(data, height=300)
     return peaks
 
 def segment_data(window_size, peaks, data):
