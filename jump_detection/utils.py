@@ -175,7 +175,17 @@ def get_class_labels(normalized, eps):
     dbscan = DBSCAN(eps = eps, min_samples = 2 * normalized.shape[1])
     dbscan.fit(normalized)
 
-    return(dbscan.labels_)
+    labels = dbscan.labels_
+    # Exclude the value -1 from consideration
+    valid_labels = labels[labels != -1]
+
+    # Find the most populous value
+    most_populous_value = np.bincount(valid_labels).argmax()
+
+    # Create the binary representation
+    binary_representation = np.where(labels == most_populous_value, 1, 0)
+
+    return(binary_representation)
 
 # ------------------------------------------------------------------------------
 # Methods for Step 3: Measure Events
