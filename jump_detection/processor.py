@@ -61,8 +61,11 @@ class TimeSeriesProcessor:
         moving_fstat = rolling_F_statistic(self.data, self.window_size, self.window_size, self.gap_size)
         peaks = find_peaks_in_data(moving_fstat)
         self.moving_fstats = moving_fstat
-        # Segment out 
-        original_segments = segment_data(self.window_size, self.gap_size,peaks, self.data)
+
+        # Segment out
+        # Offset time segments duw to different in original timeseries and fstat
+        t_offset = int(self.window_size+self.gap_size/2)
+        original_segments = segment_data(self.window_size, self.gap_size, peaks + t_offset, self.data)
         fstat_segments = segment_data(self.window_size,self.gap_size, peaks,  moving_fstat)
         
         segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
