@@ -260,7 +260,7 @@ def calculate_median_jump(segment_list, labels = None):
     segment_list : list of ndarrays
         Description of parameter
     """
-    if labels == None:
+    if labels is None:
         lables = np.ones(len(segment_list))
 
     selected_objects = [segment for segment, label in zip(segment_list, labels) if label == 1]
