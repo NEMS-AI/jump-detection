@@ -228,16 +228,21 @@ def get_class_labels(features, eps):
 # Methods for Step 3: Measure Events
 # ------------------------------------------------------------------------------
 
-def normalize_jump(timeseries, a, b):
+def normalize_jump(timeseries, a = 0, b = 1):
     """
-    Helper function designed to normalize a time series segment
+    Helper function designed to normalize a time series segment to be between the range of a and b.
+    Each mode present in the time series should be normalized independently. 
 
     Parameters:
     -----------
-    parameter1 : type
-        Description of parameter
+    timeseries : ndarray
+        An ndarray in the shape (n_sampes, n_modes)
+    a : float
+        Maximum value of new time series
+    b : float
+        Minimum value of new time series
     """
-    #TODO: Check normalization scheme
+    #TODO: Allow for different normalization schemes similar to normalize jump
 
     # To get values between a and b:
     # Normalize Y = a + (X - X_min) * (b - a) / (X_max - X_min)
@@ -248,17 +253,15 @@ def normalize_jump(timeseries, a, b):
 
 def calculate_median_jump(segment_list):
     """
-    Normalizes all jumps and calculates the median jump for each mode
+    Given a list of segments, this function will compute the "median jump" othewise known as the "jump signature" for all the segments
 
     Parameters:
     -----------
-    parameter1 : type
+    segment_list : list of ndarrays
         Description of parameter
     """
-    # TODO Perform this operation quicker
     jump_shape = segment_list[int(len(segment_list)/2)].original.shape
-
-    segment_arr = np.array([normalize_jump(segment.original, 0, 1) for segment in segment_list if segment.original.shape == jump_shape])
+    segment_arr = np.array([normalize_jump(segment.original) for segment in segment_list if segment.original.shape == jump_shape])
     median_jump = np.median(segment_arr, axis=0)
 
     

@@ -34,29 +34,13 @@ class TimeSeriesProcessor:
         -----------
         filename : str
             The name of the file to load.
-
-        Returns:
-        --------
-        pd.DataFrame
-            The loaded data.
         """
         self.data = pd.read_csv(filename).values
-        return self.data
 
 
     def process_data(self):
         """
         Process the time series data, creating segments around the peaks.
-
-        Parameters:
-        -----------
-        filename : str
-            The name of the file to load.
-
-        Returns:
-        --------
-        list of Segment
-            The time series and Fstat segments associated with each peak.
         """
         moving_fstat = rolling_F_statistic(self.data, self.window_size, self.window_size, self.gap_size)
         peaks = find_peaks_in_data(moving_fstat)
@@ -68,6 +52,27 @@ class TimeSeriesProcessor:
         original_segments = segment_data(self.window_size, self.gap_size, peaks + t_offset, self.data)
         fstat_segments = segment_data(self.window_size,self.gap_size, peaks,  moving_fstat)
         
-        segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
-        return segments
+        self.segments = [Segment(original, Fstats) for original, Fstats in zip(original_segments, fstat_segments)]
     
+    def get_all_features(self):
+        """
+        Iterate through all collected event segments and return a ndarray with all the
+
+        Returns:
+        --------
+        pd.DataFrame
+            The loaded data.
+        """
+        jump_features = []
+        for i, segment in enumerate(self.segments):
+            jump_features.append(segment.features)
+        jump_features = np.array(jump_features)
+        return normalize_features(jump_features)
+    
+    def get_all_diffs(self):
+        diffs = []
+        for segment in self.segments:
+            segment.calculate_freq_shift(self.window_size)
+            diffs.append(segment.diff)
+        diffs = np.array(diffs)
+        return diffs
