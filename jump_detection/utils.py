@@ -251,7 +251,7 @@ def normalize_jump(timeseries, a = 0, b = 1):
     normalized_array = a + ((timeseries - array_min) * (b - a)) / (array_max - array_min)
     return normalized_array
 
-def calculate_median_jump(segment_list):
+def calculate_median_jump(segment_list, labels = None):
     """
     Given a list of segments, this function will compute the "median jump" othewise known as the "jump signature" for all the segments
 
@@ -260,6 +260,11 @@ def calculate_median_jump(segment_list):
     segment_list : list of ndarrays
         Description of parameter
     """
+    if labels == None:
+        lables = np.ones(len(segment_list))
+
+    selected_objects = [segment for segment, label in zip(segment_list, labels) if label == 1]
+    
     jump_shape = segment_list[int(len(segment_list)/2)].original.shape
     segment_arr = np.array([normalize_jump(segment.original) for segment in segment_list if segment.original.shape == jump_shape])
     median_jump = np.median(segment_arr, axis=0)
