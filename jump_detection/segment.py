@@ -26,18 +26,8 @@ class Segment:
         """
         self.original = original
         self.Fstats = Fstats
-        self.features = []
-        self.diff = 0
-
-    def calculate_features(self):
-        """
-        Calculate set of reduced features and store
-
-        Parameters:
-        -----------
-        parameter1 : type
-        """
         self.features = get_peak_features(self.Fstats)
+        self.diff = 0
 
     def calculate_freq_shift(self, window_size):
         """
