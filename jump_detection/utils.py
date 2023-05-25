@@ -105,13 +105,13 @@ def compute_fwhm(values):
 
 def get_peak_features(data):
     """
-    Given a 1D array, this method will compute various summary features that are 
+    Given an ndarray array, this method will compute various summary features that are 
     used to reduce the dimensionality of the array.
 
     Parameters:
     -----------
-    value : type
-        The 1D array whose FWHM will be calculated.
+    data : numpy.ndarray
+        An array with shape ()
     """
     # TODO: Check FWHM Code
     FWHM = compute_fwhm(data)
@@ -122,35 +122,69 @@ def get_peak_features(data):
     return ((FWHM, M1, M2, M3, M4))
 
 
-def normalize_features(features):
+def normalize_features(features, mode = 'normalize'):
     """
-    Description of method.
+    Given a  ndarray array of features, this method will normalize each feature such that they 
+    are given equal weight for clustering. 
 
+    
     Parameters:
     -----------
-    parameter1 : type
-        Description of parameter
+    features : numpy.ndarray
+        An array with shape (n_events, n_features). Each feature is to be normalized such that it lies between 0 and 1. 
+    mode : string
+        A string indicating which type of normalization scheme should be used when normalizing
+            - 'normalize'
+                Force each feature to be in the range [0,1]
+            - 'quartile' 
+                A generalization of normalize in which 0 and 1 are reserved for the 25th and 75th
+            - 'stanrdize'
+                Use z-score normalization to ensure each feature has mean 0 and standard deviation 1.
+
     """
-    normalized = (features - features.mean(axis = 0)) / features.std(axis = 0)
+    if mode == 'normalize':
+        data_min = np.min(features, axis=0) 
+        data_max = np.max(features, axis=0)  
+        # Subtract min and divide by range to normalize to [0, 1]
+        normalized = (features - data_min) / (data_max - data_min)
+
+    elif mode == "quartile":
+        data_low_quartile = np.percentile(features, 25, axis=0)
+        data_high_quartile = np.percentile(features, 75, axis=0)
+        # Subtract low quartile and divide by interquartile range to normalize
+        normalized = (features - data_low_quartile) / (data_high_quartile - data_low_quartile)
+        
+    elif mode == "standardize":
+        normalized = (features - features.mean(axis = 0)) / features.std(axis = 0)
+
     return normalized
 
-def get_eps(normalized):
+def get_eps(features, mode = 'knee', proportion = None):
     """
-    From a normalized np array, compute use knee point to determine eps
+    From a given an ndarray of features, compute an estimated value for eps based on noise
 
     Parameters:
     -----------
-    parameter1 : type
-        Description of parameter
+    features : numpy.ndarray
+        An array with shape (n_events, n_features). Each feature is to be normalized such that it lies between 0 and 1. 
+    mode : string
+        A string indicated which method should be used for determing value for eps
+            - 'knee'
+                Find the knee point for the sorted distances and report as estimated eps
+            - 'proportion'
+                Find the value of eps that produces a cluster based on the proportion parameter
+    proportion : float
+        A decimal between 0 and 1 representing the proportion of the data to be normalized.
+        For instance, when in proportion mode, proportion = 0.5 indicates the largest cluster 
+        will contain around 50% of the data.
     
-    
-    TODO: implement proportion based eps similar to matlab
+    TODO: Implement proportion mode
     """
 
     # Compute the distance matrix based on NN
-    neigh = NearestNeighbors(n_neighbors=2*normalized.shape[1])
-    nbrs = neigh.fit(normalized)
-    distances, _ = nbrs.kneighbors(normalized)
+    neigh = NearestNeighbors(n_neighbors=2*features.shape[1])
+    nbrs = neigh.fit(features)
+    distances, _ = nbrs.kneighbors(features)
 
     # Sort the distances
     sorted_distances = np.sort(distances, axis=None)
@@ -161,25 +195,28 @@ def get_eps(normalized):
 
     return knee_eps
 
-def get_class_labels(normalized, eps):
+def get_class_labels(features, eps):
     """
-    Use DB scan to find labeling based on previously determined eps
+    Use DBSCAN to asign the labels based on the previously determined eps. Note this method is different than traditional
+    DBSCAN as it will assign 1 to the largest cluster and 0 to all other clusters and/or noise.
 
     Parameters:
     -----------
-    parameter1 : type
-        Description of parameter
-    
+    features : numpy.ndarray
+        An array with shape (n_events, n_features). Each feature is to be normalized such that it lies between 0 and 1. 
+    eps : float
+        A value indicated the eps used for the DBSCAN algorithm
     """
+    # Perfrom traditional DBSCAN
     eps = eps  
-    dbscan = DBSCAN(eps = eps, min_samples = 2 * normalized.shape[1])
-    dbscan.fit(normalized)
-
+    dbscan = DBSCAN(eps = eps, min_samples = 2 * features.shape[1])
+    dbscan.fit(features)
     labels = dbscan.labels_
+
     # Exclude the value -1 from consideration
     valid_labels = labels[labels != -1]
 
-    # Find the most populous value
+    # Find the most populous value (largest cluster)
     most_populous_value = np.bincount(valid_labels).argmax()
 
     # Create the binary representation
@@ -195,7 +232,7 @@ def normalize_jump(timeseries, a, b):
     """
     Helper function designed to normalize a time series segment
 
-     Parameters:
+    Parameters:
     -----------
     parameter1 : type
         Description of parameter
