@@ -1,7 +1,12 @@
-import numpy as np
-import pandas as pd
-from .utils import *
+"""
+Module containing the definition of Segment.
 
+This module defines the Segment class and its associated methods.
+It provides functionality for storing each individual jump segments
+"""
+
+import numpy as np
+from .utils import get_peak_features
 
 class Segment:
     """
@@ -15,7 +20,7 @@ class Segment:
         The moving Fstats time series segment.
     """
 
-    def __init__(self, original, Fstats):
+    def __init__(self, original, f_stats):
         """
         Initialize a Segment.
 
@@ -27,8 +32,8 @@ class Segment:
             The moving covariance time series segment.
         """
         self.original = original
-        self.Fstats = Fstats
-        self.features = get_peak_features(self.Fstats, 'normalized')
+        self.f_stats = f_stats
+        self.features = get_peak_features(self.f_stats, 'normalized')
         self.diff = 0
 
     def calculate_freq_shift(self, window_size):
@@ -39,7 +44,12 @@ class Segment:
         -----------
         parameter1 : type
         """
-        x1 = np.mean(self.original[0:window_size], axis=0)
-        x2 = np.mean(self.original[-window_size:], axis=0)
-        self.diff = (x2 - x1) / x1
-        pass
+        x_1 = np.mean(self.original[0:window_size], axis=0)
+        x_2 = np.mean(self.original[-window_size:], axis=0)
+        self.diff = (x_2 - x_1) / x_1
+        
+    def get_features(self):
+        '''
+        A getter method for retrieving the features of a particular jump.
+        '''
+        return self.features
