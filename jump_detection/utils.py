@@ -11,8 +11,10 @@ from scipy.signal import find_peaks
 # Methods for Step 1: Identify all jump events
 # ------------------------------------------------------------------------------
 
+
 def read_data(*args, **kwargs):
     return pd.read_csv(*args, **kwargs)
+
 
 def calculate_moving_average(data, window_size):
     """
@@ -26,13 +28,13 @@ def calculate_moving_average(data, window_size):
     # TODO: Remove usage of this function
     """
     moving_avg = data.rolling(window=window_size).mean()
-    moving_avg = moving_avg.fillna(0) 
+    moving_avg = moving_avg.fillna(0)
     moving_avg = moving_avg.mean(axis=1)  # average across all dimensions
     pd.DataFrame(moving_avg)
     return moving_avg
 
 
-def find_peaks_in_data(data, height = 300):
+def find_peaks_in_data(data, height=300):
     """
     Given a 1D array, find all local maxima. 
 
@@ -48,6 +50,7 @@ def find_peaks_in_data(data, height = 300):
     peaks, _ = find_peaks(data, height=height)
     return peaks
 
+
 def segment_data(window_size, gap_size, peaks, data):
     """
     For each peak passed through, capture a window around the peak. The following 
@@ -57,7 +60,7 @@ def segment_data(window_size, gap_size, peaks, data):
         [ ----- n1 ----- ) [ ----- g -----) [ ------ n2 -------)
         |                |                  |                  |
         peak-window-gap/2          peak                 peak + window + gap/2
-    
+
     Parameters:
     -----------
     parameter1 : type
@@ -103,7 +106,8 @@ def compute_fwhm(values):
 
     return fwhm
 
-def get_peak_features(data, moments = 'standard'):
+
+def get_peak_features(data, moments='standard'):
     """
     Given an ndarray array, this method will compute various summary features that are 
     used to reduce the dimensionality of the array.
@@ -128,6 +132,7 @@ def get_peak_features(data, moments = 'standard'):
 
     return ((FWHM, M1, M2, M3, M4))
 
+
 def calculate_normalized_moments(data):
     # Assuming Fstats_i is your data ndarray
     N = len(data)
@@ -140,21 +145,24 @@ def calculate_normalized_moments(data):
     data = data - data[-1]
 
     # Calculate Fint_0, the integral of data over the range
-    Fint_0 = np.trapz(data, dx=1.0)  # dx=1.0 because we're using sample number instead of time vector
-
+    # dx=1.0 because we're using sample number instead of time vector
+    Fint_0 = np.trapz(data, dx=1.0)
     # Calculate moments based on integrad definitions
-    M1 = np.trapz(tvect_i * data / Fint_0, dx=1.0) # mean
-    M2 = np.trapz((tvect_i - M1)**2 * data / Fint_0, dx=1.0) # Variance
-    M3 = np.trapz((tvect_i - M1)**3 * data / Fint_0, dx=1.0) / M3**1.5 # Skewnes
-    M4 = np.trapz((tvect_i - M1)**4 * data / Fint_0, dx=1.0) / M3**2 # Kurtosis
+    M1 = np.trapz(tvect_i * data / Fint_0, dx=1.0)  # mean
+    M2 = np.trapz((tvect_i - M1)**2 * data / Fint_0, dx=1.0)  # Variance
+    M3 = np.trapz((tvect_i - M1)**3 * data / Fint_0,
+                  dx=1.0) / M2**1.5  # Skewnes
+    M4 = np.trapz((tvect_i - M1)**4 * data / Fint_0,
+                  dx=1.0) / M2**2  # Kurtosis
     return ((M1, M2, M3, M4))
 
-def normalize_features(features, mode = 'normalize'):
+
+def normalize_features(features, mode='normalize'):
     """
     Given a  ndarray array of features, this method will normalize each feature such that they 
     are given equal weight for clustering. 
 
-    
+
     Parameters:
     -----------
     features : numpy.ndarray
@@ -169,9 +177,12 @@ def normalize_features(features, mode = 'normalize'):
                 Use z-score normalization to ensure each feature has mean 0 and standard deviation 1.
 
     """
+    mask = ~np.isnan(features).any(axis=1)
+    features = features[mask]
+
     if mode == 'normalize':
-        data_min = np.min(features, axis=0) 
-        data_max = np.max(features, axis=0)  
+        data_min = np.min(features, axis=0)
+        data_max = np.max(features, axis=0)
         # Subtract min and divide by range to normalize to [0, 1]
         normalized = (features - data_min) / (data_max - data_min)
 
@@ -179,14 +190,15 @@ def normalize_features(features, mode = 'normalize'):
         data_low_quartile = np.percentile(features, 25, axis=0)
         data_high_quartile = np.percentile(features, 75, axis=0)
         # Subtract low quartile and divide by interquartile range to normalize
-        normalized = (features - data_low_quartile) / (data_high_quartile - data_low_quartile)
-        
+        normalized = (features - data_low_quartile) / \
+            (data_high_quartile - data_low_quartile)
+
     elif mode == "standardize":
-        normalized = (features - features.mean(axis = 0)) / features.std(axis = 0)
+        normalized = (features - features.mean(axis=0)) / features.std(axis=0)
+    return (normalized, mask)
 
-    return normalized
 
-def get_eps(features, mode = 'knee', proportion = None):
+def get_eps(features, mode='knee', proportion=None):
     """
     From a given an ndarray of features, compute an estimated value for eps based on noise
 
@@ -204,7 +216,7 @@ def get_eps(features, mode = 'knee', proportion = None):
         A decimal between 0 and 1 representing the proportion of the data to be normalized.
         For instance, when in proportion mode, proportion = 0.5 indicates the largest cluster 
         will contain around 50% of the data.
-    
+
     TODO: Implement proportion mode
     """
 
@@ -217,10 +229,12 @@ def get_eps(features, mode = 'knee', proportion = None):
     sorted_distances = np.sort(distances, axis=None)
 
     # Use knee finder function to estimate knee_eps
-    kneedle = KneeLocator(np.arange(len(sorted_distances)), sorted_distances, S=1.0, curve="convex", direction="increasing")
+    kneedle = KneeLocator(np.arange(len(sorted_distances)),
+                          sorted_distances, S=1.0, curve="convex", direction="increasing")
     knee_eps = sorted_distances[kneedle.knee]
 
     return knee_eps
+
 
 def get_class_labels(features, eps):
     """
@@ -235,8 +249,8 @@ def get_class_labels(features, eps):
         A value indicated the eps used for the DBSCAN algorithm
     """
     # Perfrom traditional DBSCAN
-    eps = eps  
-    dbscan = DBSCAN(eps = eps, min_samples = 2 * features.shape[1])
+    eps = eps
+    dbscan = DBSCAN(eps=eps, min_samples=2 * features.shape[1])
     dbscan.fit(features)
     labels = dbscan.labels_
 
@@ -249,13 +263,14 @@ def get_class_labels(features, eps):
     # Create the binary representation
     binary_representation = np.where(labels == most_populous_value, 1, 0)
 
-    return(binary_representation)
+    return (binary_representation)
 
 # ------------------------------------------------------------------------------
 # Methods for Step 3: Measure Events
 # ------------------------------------------------------------------------------
 
-def normalize_jump(timeseries, a = 0, b = 1):
+
+def normalize_jump(timeseries, a=0, b=1):
     """
     Helper function designed to normalize a time series segment to be between the range of a and b.
     Each mode present in the time series should be normalized independently. 
@@ -269,16 +284,18 @@ def normalize_jump(timeseries, a = 0, b = 1):
     b : float
         Minimum value of new time series
     """
-    #TODO: Allow for different normalization schemes similar to normalize jump
+    # TODO: Allow for different normalization schemes similar to normalize jump
 
     # To get values between a and b:
     # Normalize Y = a + (X - X_min) * (b - a) / (X_max - X_min)
     array_min = timeseries.min(axis=0)
     array_max = timeseries.max(axis=0)
-    normalized_array = a + ((timeseries - array_min) * (b - a)) / (array_max - array_min)
+    normalized_array = a + ((timeseries - array_min) *
+                            (b - a)) / (array_max - array_min)
     return normalized_array
 
-def calculate_median_jump(segment_list, labels = None):
+
+def calculate_median_jump(segment_list, labels=None):
     """
     Given a list of segments, this function will compute the "median jump" othewise known as the "jump signature" for all the segments
 
@@ -290,12 +307,12 @@ def calculate_median_jump(segment_list, labels = None):
     if labels is None:
         lables = np.ones(len(segment_list))
 
-    selected_objects = [segment for segment, label in zip(segment_list, labels) if label == 1]
-    
+    selected_objects = [segment for segment,
+                        label in zip(segment_list, labels) if label == 1]
+
     jump_shape = segment_list[int(len(segment_list)/2)].original.shape
-    segment_arr = np.array([normalize_jump(segment.original) for segment in segment_list if segment.original.shape == jump_shape])
+    segment_arr = np.array([normalize_jump(segment.original)
+                           for segment in segment_list if segment.original.shape == jump_shape])
     median_jump = np.median(segment_arr, axis=0)
 
-    
     return median_jump
-
