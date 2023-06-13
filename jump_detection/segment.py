@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from .utils import *
+
+
 class Segment:
     """
     Class representing a time series segment associated with a peak.
@@ -26,7 +28,7 @@ class Segment:
         """
         self.original = original
         self.Fstats = Fstats
-        self.features = get_peak_features(self.Fstats)
+        self.features = get_peak_features(self.Fstats, 'normalized')
         self.diff = 0
 
     def calculate_freq_shift(self, window_size):
@@ -37,7 +39,7 @@ class Segment:
         -----------
         parameter1 : type
         """
-        x1 = np.mean(self.original[0:window_size], axis = 0)
-        x2 = np.mean(self.original[-window_size :], axis = 0)
+        x1 = np.mean(self.original[0:window_size], axis=0)
+        x2 = np.mean(self.original[-window_size:], axis=0)
         self.diff = (x2 - x1) / x1
         pass
