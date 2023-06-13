@@ -103,7 +103,7 @@ def compute_fwhm(values):
 
     return fwhm
 
-def get_peak_features(data):
+def get_peak_features(data, moments = 'standard'):
     """
     Given an ndarray array, this method will compute various summary features that are 
     used to reduce the dimensionality of the array.
@@ -112,15 +112,42 @@ def get_peak_features(data):
     -----------
     data : numpy.ndarray
         An array with shape ()
+    moments : str
+        A string specifying whether standard or normalized moments are calculated
     """
     # TODO: Check FWHM Code
     FWHM = compute_fwhm(data)
-    M1 = np.mean(data)
-    M2 = np.var(data)
-    M3 = skew(data)
-    M4 = kurtosis(data)
+
+    if moments == 'normalized':
+        M1, M2, M3, M4 = calculate_normalized_moments(data)
+    else:
+        M1 = np.mean(data)
+        M2 = np.var(data)
+        M3 = skew(data)
+        M4 = kurtosis(data)
+
     return ((FWHM, M1, M2, M3, M4))
 
+def calculate_normalized_moments(data):
+    # Assuming Fstats_i is your data ndarray
+    N = len(data)
+
+    # Create an array equivalent to tvect_i using sample number
+    tvect_i = np.arange(N)
+
+    # Updating Fstats_i as per the new conditions
+    data = np.maximum(data, data[-1])
+    data = data - data[-1]
+
+    # Calculate Fint_0, the integral of data over the range
+    Fint_0 = np.trapz(data, dx=1.0)  # dx=1.0 because we're using sample number instead of time vector
+
+    # Calculate moments based on integrad definitions
+    M1 = np.trapz(tvect_i * data / Fint_0, dx=1.0) # mean
+    M2 = np.trapz((tvect_i - M1)**2 * data / Fint_0, dx=1.0) # Variance
+    M3 = np.trapz((tvect_i - M1)**3 * data / Fint_0, dx=1.0) / M3**1.5 # Skewnes
+    M4 = np.trapz((tvect_i - M1)**4 * data / Fint_0, dx=1.0) / M3**2 # Kurtosis
+    return ((M1, M2, M3, M4))
 
 def normalize_features(features, mode = 'normalize'):
     """
