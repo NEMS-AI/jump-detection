@@ -1,14 +1,19 @@
+"""
+Module containing code for plotting a few key plots.
+"""
+
 import matplotlib.pyplot as plt
 from .utils import calculate_median_jump
+
 
 def plot_segment(segment):
     """
     Plots a histogram.
-    
+
     Parameters:
-    
+
     """
-    fig, (ax1, ax3) = plt.subplots(2,1)
+    _, (ax1, ax3) = plt.subplots(2, 1)
 
     column1 = segment.original[:, 0]
     column2 = segment.original[:, 1]
@@ -25,14 +30,20 @@ def plot_segment(segment):
     ax2.set_ylabel('Mode 2', color='r')
     ax2.tick_params('y', colors='r')
 
-
-    ax3.plot(segment.Fstats)
+    ax3.plot(segment.f_stats)
     plt.show()
 
+
 def plot_jump_signature(segment_list, labels):
+    """
+    Plots the jump signature based on median.
+
+    Parameters:
+
+    """
     median_jump = calculate_median_jump(segment_list, labels)
 
-    fig, ax1 = plt.subplots(1,1)
+    _, ax1 = plt.subplots(1, 1)
 
     column1 = median_jump[:, 0]
     column2 = median_jump[:, 1]
